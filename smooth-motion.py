@@ -8,7 +8,7 @@ import time
 S = 50
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
-FPS = 120
+FPS = 60
 
 
 class FrontEnd(object):
@@ -81,13 +81,11 @@ class FrontEnd(object):
 
             # May need to display certain data later
             # Displaying battery
-            # text = "Battery: {}%".format(self.tello.get_battery())
-            # cv2.putText(frame, text, (5, 720 - 5),
-                # cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            text = "Battery: {}%".format(self.tello.get_battery())
+            frame = cv2.putText(frame, text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             # Displaying X-axis acceleration
-            # text_xacc = "X-Acceleration: {} cm/s^2".format(self.tello.get_acceleration_x())
-            # cv2.putText(frame, text_xacc, (20, 720 - 5),
-                # cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            text_xacc = "X-Acceleration: {} cm/s^2".format(self.tello.get_acceleration_x())
+            frame = cv2.putText(frame, text_xacc, (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = np.rot90(frame)
             frame = np.flipud(frame)
@@ -151,6 +149,7 @@ class FrontEnd(object):
 
 
 def main():
+    print("initiating...")
     frontend = FrontEnd()
 
     # run frontend

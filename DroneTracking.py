@@ -9,6 +9,6 @@ class DroneTracking:
         self.radius = radius
 
     def Movement(self):
-        # If center(X) < center of video frame,
+        #If center(X) < center of video frame,
             #Drone should move left
         # etc...
