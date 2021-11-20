@@ -8,7 +8,7 @@ import time
 S = 50
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
-FPS = 60
+FPS = 30
 
 
 class FrontEnd(object):
@@ -20,7 +20,10 @@ class FrontEnd(object):
             - Arrow keys: Forward, backward, left and right.
             - A and D: Counter clockwise and clockwise rotations (yaw)
             - W and S: Up and down.
+            - M: enable hand control
+            - C: enable camera control (developing)
     """
+    handControl = True
 
     def __init__(self):
         # Init pygame
@@ -67,10 +70,17 @@ class FrontEnd(object):
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         should_stop = True
-                    else:
+                    elif event.key == pygame.K_m:
+                        self.handControl = True
+                    elif event.key == pygame.K_c:
+                        self.handControl = False
+                    elif self.handControl == True:
                         self.keydown(event.key)
-                elif event.type == pygame.KEYUP:
+                elif event.type == pygame.KEYUP and (self.handControl or event.key == pygame.K_l):
                     self.keyup(event.key)
+
+            #if not self.handControl:
+
 
             if frame_read.stopped:
                 break
@@ -81,11 +91,17 @@ class FrontEnd(object):
 
             # May need to display certain data later
             # Displaying battery
-            text = "Battery: {}%".format(self.tello.get_battery())
-            frame = cv2.putText(frame, text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            batteryText = "Battery: {}%".format(self.tello.get_battery())
+            frame = cv2.putText(frame, batteryText, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             # Displaying X-axis acceleration
-            text_xacc = "X-Acceleration: {} cm/s^2".format(self.tello.get_acceleration_x())
-            frame = cv2.putText(frame, text_xacc, (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            text_x = "X Spd: {} cm/s".format(self.tello.get_speed_x()) + "  Acc: {} cm/s^2".format(self.tello.get_acceleration_x())
+            frame = cv2.putText(frame, text_x, (5, 720 - 95), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            text_y = "Y Spd: {} cm/s".format(self.tello.get_speed_y()) + "  Acc: {} cm/s^2".format(self.tello.get_acceleration_y())
+            frame = cv2.putText(frame, text_y, (5, 720 - 65), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            text_z = "Z Spd: {} cm/s".format(self.tello.get_speed_z()) + "  Acc: {} cm/s^2".format(self.tello.get_acceleration_z())
+            frame = cv2.putText(frame, text_z, (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            handControlText = "Hand control: " + ("Enabled" if self.handControl else "Disabled")
+            frame = cv2.putText(frame, handControlText, (5, 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = np.rot90(frame)
             frame = np.flipud(frame)
