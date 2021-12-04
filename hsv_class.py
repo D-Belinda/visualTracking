@@ -3,6 +3,7 @@ import numpy as np
 
 def nothing(x):
     pass
+
 class hsv_setter:
     hsv = np.asarray([])
     def __init__(self):
@@ -20,10 +21,7 @@ class hsv_setter:
         cv2.createTrackbar("U - S", "Trackbars", self.hsv[1][1], 255, nothing)
         cv2.createTrackbar("U - V", "Trackbars", self.hsv[1][2], 255, nothing)
 
-    def get_hsv(self, frame):
-        # Flip the frame horizontally (Not required)
-        # frame = cv2.flip(frame, 1)
-
+    def get_hsv(self):
         # Get the new values of the trackbar in real time as the user changes
         # them
         l_h = cv2.getTrackbarPos("L - H", "Trackbars")
@@ -63,4 +61,7 @@ class hsv_setter:
         if key == ord('h'):
             print("hsv_arr saved!")
             np.save('hsv_value', self.hsv)
+
+            # Release the camera & destroy the windows.
+            cv2.destroyAllWindows()
 
