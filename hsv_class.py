@@ -64,4 +64,3 @@ class hsv_setter:
 
             # Release the camera & destroy the windows.
             cv2.destroyAllWindows()
-

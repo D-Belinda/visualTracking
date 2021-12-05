@@ -7,18 +7,18 @@ import cv2
 import imutils
 import time
 
+from hsv_class import hsv_setter
 from object_tracking_class import object_tracker
-obj = object_tracker()
 
+track = object_tracker()
 vs = VideoStream(0).start()
 
 while True:
     # grab the current frame
     frame = vs.read()
-    frame = obj.processAll(frame, obj.hsv_value)
+    frame = track.processAll(frame, track.hsv_value)
 
     # Showing the frame is not included in the class!
-
     # show the frame to our screen and increment the frame counter
     cv2.imshow("Frame", frame)
     key = cv2.waitKey(1) & 0xFF
