@@ -27,6 +27,7 @@ class object_tracker:
         (self.dX, self.dY) = (0, 0)
         self.direction = ""
         self.hsv_value = np.load('hsv_value.npy')
+        self.circle = ()
         time.sleep(2.0)
 
     def processAll(self, frame, hsv_value):
@@ -63,9 +64,9 @@ class object_tracker:
             # centroid
             c = max(cnts, key=cv2.contourArea)
             ((x, y), radius) = cv2.minEnclosingCircle(c)
+            self.circle = ((x, y), radius)
             M = cv2.moments(c)
             self.center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-
             # only proceed if the radius meets a minimum size
             if radius > 10:
                 frame = cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
@@ -111,3 +112,5 @@ class object_tracker:
             thickness = int(np.sqrt(self.args["buffer"] / float(i + 1)) * 2.5)
             frame = cv2.line(frame, self.pts[i - 1], self.pts[i], (255, 255, 255), thickness)
         return frame
+    def getCircle(self):
+        return self.circle
