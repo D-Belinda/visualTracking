@@ -5,6 +5,7 @@ import numpy as np
 import time
 from object_tracking_class import object_tracker
 from hsv_class import hsv_setter
+from motion_control import motion_controller
 
 # Speed of the drone
 S = 100
@@ -52,6 +53,7 @@ class FrontEnd(object):
 
         self.ot = object_tracker()
         self.hsv_control = hsv_setter()
+        self.motion_controller = motion_controller()
 
     def run(self):
 
@@ -98,6 +100,7 @@ class FrontEnd(object):
             self.hsv_control.display_preview(frame)
             hsv_values = self.hsv_control.get_hsv(frame)
             frame = self.ot.processAll(frame, hsv_values)
+            motion_controller.add(self.ot.getCircle())
 
             # May need to display certain data later
             # Displaying battery
