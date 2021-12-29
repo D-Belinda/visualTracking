@@ -7,4 +7,4 @@ import time
 
 from object_tracking_class import object_tracker
 
-class
+class AutoTracking(object_tracker):
