@@ -110,4 +110,5 @@ class object_tracker:
                         0.35, (0, 0, 255), 1)
             thickness = int(np.sqrt(self.args["buffer"] / float(i + 1)) * 2.5)
             frame = cv2.line(frame, self.pts[i - 1], self.pts[i], (255, 255, 255), thickness)
+
         return frame

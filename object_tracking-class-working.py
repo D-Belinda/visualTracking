@@ -21,6 +21,7 @@ while True:
     # Showing the frame is not included in the class!
     # show the frame to our screen and increment the frame counter
     cv2.imshow("Frame", frame)
+
     key = cv2.waitKey(1) & 0xFF
     # counter += 1
 

@@ -87,20 +87,6 @@ class FrontEnd(object):
             # import hsv values
             self.hsv_value = np.load('hsv_value.npy')
 
-            # resize the frame, blur it, and convert it to the HSV
-            # color space
-            # frame = imutils.resize(frame, width=600)
-            blurred = cv2.GaussianBlur(frame, (11, 11), 0)
-            hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-
-            # construct a mask for the color "green", then perform
-            # a series of dilations and erosions to remove any small
-            # blobs left in the mask
-            self.mask = cv2.inRange(hsv, self.hsv_value[0], self.hsv_value[1])
-            # mask = cv2.erode(mask, None, iterations=2)
-            # mask = cv2.dilate(mask, None, iterations=2)
-            # FIXME: end of adjustments
-
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = np.rot90(frame)
             frame = np.flipud(frame)
