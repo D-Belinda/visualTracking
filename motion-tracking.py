@@ -32,7 +32,7 @@ class FrontEnd(object):
 
         # Create pygame window
         pygame.display.set_caption("Tello video stream")
-        self.screen = pygame.display.set_mode([960, 720])
+        self.screen = pygame.display.set_mode([640, 480])
 
         # Init Tello object that interacts with the Tello drone
         self.tello = Tello()

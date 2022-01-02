@@ -27,12 +27,20 @@ class object_tracker:
         (self.dX, self.dY) = (0, 0)
         self.direction = ""
         self.hsv_value = np.load('hsv_value.npy')
+
+        # new changes for tracking offset
+        self.framecenter = None
+        self.xoff = None
+        self.yoff = None
         time.sleep(2.0)
+
+    def setFrame(self, frame):
+        self.framecenter = (frame.shape[1] / 2, frame.shape[0] / 2)
+        print(self.framecenter)
 
     def processAll(self, frame, hsv_value):
         self.hsv_value = np.asarray(hsv_value)
-
-        frame = frame[1] if self.args.get("video", False) else frame
+        # frame = frame[1] if self.args.get("video", False) else frame
         # if we are viewing a video and we did not grab a frame,
         # then we have reached the end of the video
         if frame is None:
@@ -43,7 +51,7 @@ class object_tracker:
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
         hsv_temp = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
-        # construct a mask for the color "green", then perform
+        # construct a mask for the specified hsv values, then perform
         # a series of dilations and erosions to remove any small
         # blobs left in the mask
         mask = cv2.inRange(hsv_temp, self.hsv_value[0], self.hsv_value[1])
@@ -101,6 +109,17 @@ class object_tracker:
                 else:
                     self.direction = dirX if dirX != "" else dirY
 
+            # get the horizontal and vertical offset
+            self.xoff = self.pts[i][0] - self.framecenter[0]
+            self.yoff = self.pts[i][1] - self.framecenter[1]
+
+            # x-off = pts[i][0] - x-center
+                # x-off > 0 == move right
+                # x-off < 0 == move left
+            # y-off = pts[i][1] - y-center
+                # y-off > 0 == move down
+                # y-off < 0 == move up
+
             # otherwise, compute the thickness of the line and
             # draw the connecting lines
             cv2.putText(frame, self.direction, (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
@@ -111,4 +130,9 @@ class object_tracker:
             thickness = int(np.sqrt(self.args["buffer"] / float(i + 1)) * 2.5)
             frame = cv2.line(frame, self.pts[i - 1], self.pts[i], (255, 255, 255), thickness)
 
+
         return frame
+
+    def getOffset(self):
+        return (self.xoff, self.yoff)
+
