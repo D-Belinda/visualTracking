@@ -30,15 +30,15 @@ class object_tracker:
 
         # new changes for tracking offset
         self.framecenter = None
-        self.xoff = None
-        self.yoff = None
+        self.xoff = 0
+        self.yoff = 0
         time.sleep(2.0)
 
-    def setFrame(self, frame):
-        self.framecenter = (frame.shape[1] / 2, frame.shape[0] / 2)
-        print(self.framecenter)
+    #def setFrame(self, frame):
+        #self.framecenter = (frame.shape[1] / 2, frame.shape[0] / 2)
+        # print(self.framecenter)
 
-    def processAll(self, frame, hsv_value):
+    def processAll(self, frame, hsv_value, framecenter):
         self.hsv_value = np.asarray(hsv_value)
         # frame = frame[1] if self.args.get("video", False) else frame
         # if we are viewing a video and we did not grab a frame,
@@ -110,15 +110,8 @@ class object_tracker:
                     self.direction = dirX if dirX != "" else dirY
 
             # get the horizontal and vertical offset
-            self.xoff = self.pts[i][0] - self.framecenter[0]
-            self.yoff = self.pts[i][1] - self.framecenter[1]
-
-            # x-off = pts[i][0] - x-center
-                # x-off > 0 == move right
-                # x-off < 0 == move left
-            # y-off = pts[i][1] - y-center
-                # y-off > 0 == move down
-                # y-off < 0 == move up
+            self.xoff = (self.pts[i][0] - framecenter[0])
+            self.yoff = (self.pts[i][1] - framecenter[1])
 
             # otherwise, compute the thickness of the line and
             # draw the connecting lines

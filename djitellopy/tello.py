@@ -31,7 +31,10 @@ class Tello:
     TAKEOFF_TIMEOUT = 20  # in seconds
     FRAME_GRAB_TIMEOUT = 5
     TIME_BTW_COMMANDS = 0.1  # in seconds
-    TIME_BTW_RC_CONTROL_COMMANDS = 0.001  # in seconds
+
+    #CHANGED!
+    TIME_BTW_RC_CONTROL_COMMANDS = 0.1  # in seconds
+
     RETRY_COUNT = 3  # number of retries after a failed command
     TELLO_IP = '192.168.10.1'  # Tello IP address
 
@@ -1011,7 +1014,9 @@ class BackgroundFrameRead:
 
     def __init__(self, tello, address):
         self.address = address
-        self.frame = np.zeros([300, 400, 3], dtype=np.uint8)
+        # frame size was edited to match
+        # [height, width, #channels]
+        self.frame = np.zeros([480, 640, 3], dtype=np.uint8)
 
         # Try grabbing frame with PyAV
         # According to issue #90 the decoder might need some time

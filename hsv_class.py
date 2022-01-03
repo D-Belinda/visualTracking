@@ -42,6 +42,7 @@ class hsv_setter:
     def display_preview(self, frame):
         # Convert the BGR image to HSV image.
         hsv_image = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        # hsv_image = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
 
         # Filter the image and get the binary mask, where white represents
         # your target color
@@ -54,7 +55,9 @@ class hsv_setter:
         # Converting the binary mask to 3 channel image, this is just so
         # we can stack it with the others
         mask_3 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)  # stack the mask, orginal frame and the filtered result
+
         stacked = np.hstack((mask_3, res))
+        # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         cv2.imshow('Trackbars', cv2.resize(stacked, None, fx=0.4, fy=0.4))
 
         key = cv2.waitKey(1)
