@@ -29,11 +29,11 @@ class Tello:
     # Send and receive commands, client socket
     RESPONSE_TIMEOUT = 7  # in seconds
     TAKEOFF_TIMEOUT = 20  # in seconds
-    FRAME_GRAB_TIMEOUT = 5
+    FRAME_GRAB_TIMEOUT = 10 #CHANGED
     TIME_BTW_COMMANDS = 0.1  # in seconds
 
-    #CHANGED!
-    TIME_BTW_RC_CONTROL_COMMANDS = 0.1  # in seconds
+    #Original: 0.001 - CHANGED!
+    TIME_BTW_RC_CONTROL_COMMANDS = 0.001  # in seconds
 
     RETRY_COUNT = 3  # number of retries after a failed command
     TELLO_IP = '192.168.10.1'  # Tello IP address

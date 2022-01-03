@@ -20,7 +20,6 @@ tello.streamoff()
 tello.streamon()
 
 tello.takeoff()
-tello.set_speed(5)
 
 track = object_tracker()
 frame = tello.get_frame_read().frame
@@ -29,6 +28,8 @@ print(framecenter)
 
 move = motionTracking()
 offset = None
+
+time.sleep(2.0)
 
 while True:
     # grab the current frame

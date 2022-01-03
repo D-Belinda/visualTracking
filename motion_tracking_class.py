@@ -12,7 +12,7 @@ from object_tracking_class import object_tracker
 from FrontEnd import FrontEnd
 
 # Speed of the drone
-S = 5
+S = 15
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 FPS = 120
@@ -30,39 +30,42 @@ class motionTracking():
         self.yaw_velocity = 0
         self.speed = 10
 
-        self.send_rc_control = True
+        self.send_rc_control = False
 
     def move(self, offset):
         self.for_back_velocity = 0
         self.yaw_velocity = 0
         self.left_right_velocity = 0
         self.up_down_velocity = 0
+        self.send_rc_control = False
 
         # if statement to control the process
-        if offset[0] == 0 and offset[1] == 0:
+        if abs(offset[0]) <= 30 and abs(offset[1]) <= 20:
             self.left_right_velocity = 0
             self.up_down_velocity = 0
 
-        elif offset[0] < 0:
-            self.left_right_velocity = -S
+        #elif offset[0] < 0:
+            #self.left_right_velocity = -S
 
-            if offset[1] < 0:
-                self.up_down_velocity = S
-            else:
-                self.up_down_velocity = -S
+            #if offset[1] < 0:
+                #self.up_down_velocity = S
+            #else:
+                #self.up_down_velocity = -S
 
-        elif offset[0] > 0:
-            self.left_right_velocity = S
+        #elif offset[0] > 0:
+            #self.left_right_velocity = S
 
-            if offset[1] < 0:
-                self.up_down_velocity = S
-            else:
-                self.up_down_velocity = -S
+            #if offset[1] < 0:
+                #self.up_down_velocity = S
+            #else:
+                #self.up_down_velocity = -S
 
-        #elif offset[1] < 0:
-            #self.up_down_velocity = S
-        #elif offset[1] > 0:
-            #self.up_down_velocity = -S
+        elif offset[1] < 0:
+            self.send_rc_control = True
+            self.up_down_velocity = S
+        elif offset[1] > 0:
+            self.send_rc_control = True
+            self.up_down_velocity = -S
 
         #elif offset[0] < 0:
             #self.left_right_velocity = -S
