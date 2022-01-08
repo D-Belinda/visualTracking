@@ -2,6 +2,8 @@ import numpy as np
 
 # Speed of the drone
 S = 10
+# Turn coefficient - needs to turn faster
+T = 1.5
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 FPS = 120
@@ -36,7 +38,7 @@ class motionTracking():
         # only move if there is a significant offset or
         # the object is very close to the drone
         if np.abs(offset[0]) >= 40 or np.abs(offset[1]) >= 30 \
-                or offset[2] > 100 or offset[2] < 50:
+                or offset[2] > 80 or offset[2] < 50:
             self.send_rc_control = True
         else:
             return
@@ -44,21 +46,21 @@ class motionTracking():
         # if statement to control the process of moving
         # moving up/down based on y-offset
         if offset[1] < -30:
-            self.up_down_velocity = S
+            self.up_down_velocity = S   # move up
         elif offset[1] > 30:
-            self.up_down_velocity = -S
+            self.up_down_velocity = -S  # move down
 
         # rotating left/right based on x-offset
         if offset[0] < -40:
-            self.yaw_velocity = -S
+            self.yaw_velocity = int(-T*S)    # turn counter clockwise
         elif offset[0] > 40:
-            self.yaw_velocity = S
+            self.yaw_velocity = int(T*S)   # turn clockwise
 
         # moving forward/back based on the radius
-        if offset[2] > 100:
-            self.for_back_velocity = -S
+        if offset[2] > 80:
+            self.for_back_velocity = -S     # move backwards
         elif offset[2] < 50:
-            self.for_back_velocity = S
+            self.for_back_velocity = S      # move forwards
 
     def update(self, tello):
         """ Update routine. Send velocities to Tello."""
