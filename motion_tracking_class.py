@@ -36,7 +36,7 @@ class motionTracking():
         # only move if there is a significant offset or
         # the object is very close to the drone
         if np.abs(offset[0]) >= 40 or np.abs(offset[1]) >= 30 \
-                or offset[2] > 100:
+                or offset[2] > 100 or offset[2] < 50:
             self.send_rc_control = True
         else:
             return
