@@ -3,6 +3,7 @@
 from hsv_class import hsv_setter
 import cv2
 from djitellopy import Tello
+import time
 
 tello = Tello()
 tello.connect(False)
@@ -10,13 +11,8 @@ tello.connect(False)
 tello.streamoff()
 tello.streamon()
 
-#frame = tello.get_frame_read().frame
-
 obj = hsv_setter()
-
-#cap = cv2.VideoCapture(0)
-#cap.set(3,1280)
-#cap.set(4,720)
+time.sleep(2.0)
 
 while True:
     frame = tello.get_frame_read().frame

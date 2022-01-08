@@ -29,8 +29,8 @@ class Tello:
     # Send and receive commands, client socket
     RESPONSE_TIMEOUT = 7  # in seconds
     TAKEOFF_TIMEOUT = 20  # in seconds
-    FRAME_GRAB_TIMEOUT = 10 #CHANGED
-    TIME_BTW_COMMANDS = 0.1  # in seconds
+    FRAME_GRAB_TIMEOUT = 10 # CHANGED
+    TIME_BTW_COMMANDS = 0.1  # in seconds CHANGED!
 
     #Original: 0.001 - CHANGED!
     TIME_BTW_RC_CONTROL_COMMANDS = 0.001  # in seconds

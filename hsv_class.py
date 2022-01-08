@@ -6,10 +6,15 @@ def nothing(x):
 
 class hsv_setter:
     hsv = np.asarray([])
+
     def __init__(self):
+        # load pre-saved hsv values
         self.hsv = np.load('hsv_value.npy')
         print(self.hsv)
+
+        # create a new window named "Trackbars"
         cv2.namedWindow("Trackbars")
+
         # Now create 6 trackbars that will control the lower and upper range of
         # H,S and V channels. The Arguments are like this: Name of trackbar,
         # window name, range,callback function. For Hue the range is 0-179 and
@@ -62,7 +67,7 @@ class hsv_setter:
 
         key = cv2.waitKey(1)
         if key == ord('h'):
-            print("hsv_arr saved!")
+            print("hsv_arr saved")
             np.save('hsv_value', self.hsv)
 
             # Release the camera & destroy the windows.

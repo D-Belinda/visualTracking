@@ -1,48 +1,45 @@
-# import the necessary packages
-from collections import deque
-from imutils.video import VideoStream
 from djitellopy import Tello
-import pygame
-import numpy as np
-import argparse
 import cv2
-import imutils
 import time
-
-from hsv_class import hsv_setter
 from object_tracking_class import object_tracker
 from motion_tracking_class import motionTracking
 
+# initialize the Tello object
 tello = Tello()
-tello.connect(False)
+tello.connect(False) # must be false - receiving state packet errors
 
+# in case the stream is already on, turn off and back on
 tello.streamoff()
 tello.streamon()
 
-tello.takeoff()
-
+# initialize the object tracking class and find the frame center
 track = object_tracker()
 frame = tello.get_frame_read().frame
 framecenter = (frame.shape[1] / 2, frame.shape[0] / 2)
 print(framecenter)
 
+# initialize the motion tracking class
 move = motionTracking()
 offset = None
 
+# start flying
+tello.takeoff()
+
+# sleep to allow everything time to get running
 time.sleep(2.0)
+
 
 while True:
     # grab the current frame
     frame = tello.get_frame_read().frame
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-    # Frame was also resized in the tello.py BackgroundFrameRead source code
-    # Need to ensure center is matching, (width, height)
+    # The frame was also resized in the tello.py BackgroundFrameRead source code
+    # Need to ensure center is matching, format: (width, height)
     frame = cv2.resize(frame, (640, 480))
     frame = track.processAll(frame, track.hsv_value, framecenter)
 
-    # Showing the frame is not included in the class!
-    # show the frame to our screen and increment the frame counter
+    # show the frame to our screen
     cv2.imshow("Frame", frame)
 
     # print the offset
@@ -50,14 +47,12 @@ while True:
     print(offset)
     time.sleep(1 / 60)
 
-    #run motion class here to move appropriately
+    # moving based on the offset
     move.move(offset)
     move.update(tello)
 
     key = cv2.waitKey(1) & 0xFF
-    # counter += 1
-
-    # if the 'q' key is pressed, stop the loop
+    # if the 'q' key is pressed, stop the loop and end the program
     if key == ord("q"):
         tello.land()
         tello.streamoff()

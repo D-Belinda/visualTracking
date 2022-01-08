@@ -1,24 +1,23 @@
-# USAGE
-# python object_tracking.py --video object_tracking_example.mp4
-# python object_tracking.py
-
-# import the necessary packages
 from collections import deque
 import numpy as np
 import argparse
 import cv2
 import imutils
-import time
 
 class object_tracker:
     def __init__(self):
+        """ Maintains the video stream from the drone
+            Applies the object tracking using pre-saved HSV values
+            Returns the offset and radius of the tracked object
+        """
         # construct the argument parse and parse the arguments
         self.ap = argparse.ArgumentParser()
         self.ap.add_argument("-v", "--video",
-                        help="path to the (optional) video file")
+                             help="path to the (optional) video file")
         self.ap.add_argument("-b", "--buffer", type=int, default=32,
-                        help="max buffer size")
+                             help="max buffer size")
         self.args = vars(self.ap.parse_args())
+
         # initialize the list of tracked points, the frame counter,
         # and the coordinate deltas
         self.pts = deque(maxlen=self.args["buffer"])
@@ -28,26 +27,26 @@ class object_tracker:
         self.direction = ""
         self.hsv_value = np.load('hsv_value.npy')
 
-        # new changes for tracking offset
-        self.framecenter = None
-        self.xoff = 0
-        self.yoff = 0
-        time.sleep(2.0)
-
-    #def setFrame(self, frame):
-        #self.framecenter = (frame.shape[1] / 2, frame.shape[0] / 2)
-        # print(self.framecenter)
+        # returning values for tracking offset
+        self.xoff = self.yoff = 0
+        self.radius = 0
 
     def processAll(self, frame, hsv_value, framecenter):
+        """ Layering a mask and displaying tracked object
+            Returns the offset and radius of the tracked object
+        """
+
+        # importing the pre-saved HSV values
         self.hsv_value = np.asarray(hsv_value)
+
         # frame = frame[1] if self.args.get("video", False) else frame
         # if we are viewing a video and we did not grab a frame,
         # then we have reached the end of the video
         if frame is None:
             pass
+
         # resize the frame, blur it, and convert it to the HSV
         # color space
-        # frame = imutils.resize(frame, width=600)
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
         hsv_temp = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
@@ -73,12 +72,16 @@ class object_tracker:
             ((x, y), radius) = cv2.minEnclosingCircle(c)
             M = cv2.moments(c)
             self.center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+            self.radius = radius
 
             # only proceed if the radius meets a minimum size
             if radius > 10:
                 frame = cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
                 frame = cv2.circle(frame, self.center, 5, (0, 0, 255), -1)
                 self.pts.appendleft(self.center)
+
+            # FIXME: can the size of the radius also be accumulated
+            # FIXME: in self.pts to return dR?
 
         # loop over the set of tracked points
         for i in np.arange(1, len(self.pts)):
@@ -92,6 +95,8 @@ class object_tracker:
                 # text variables
                 self.dX = self.pts[-10][0] - self.pts[i][0]
                 self.dY = self.pts[-10][1] - self.pts[i][1]
+
+                # FIXME: bottom is no longer used, can delete
                 (dirX, dirY) = ("", "")
                 if np.abs(self.dX) > 20:
                     dirX = "East" if np.sign(self.dX) == 1 else "West"
@@ -123,9 +128,12 @@ class object_tracker:
             thickness = int(np.sqrt(self.args["buffer"] / float(i + 1)) * 2.5)
             frame = cv2.line(frame, self.pts[i - 1], self.pts[i], (255, 255, 255), thickness)
 
-
         return frame
 
     def getOffset(self):
-        return (self.xoff, self.yoff)
-
+        """ Returning the values necessary for motion control
+            [0]: self.xoff
+            [1]: self.yoff
+            [2]: self.radius
+        """
+        return self.xoff, self.yoff, self.radius
