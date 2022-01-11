@@ -43,7 +43,7 @@ else:
     }
 
     # grab the appropriate object tracker using our dictionary of
-    # OpenCV object tracker objects
+    # OpenCV object tracker object
     tracker = OPENCV_OBJECT_TRACKERS[args["tracker"]]()
 
 # initialize the bounding box coordinates of the object we are going

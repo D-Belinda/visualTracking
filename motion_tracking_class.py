@@ -1,13 +1,13 @@
 import numpy as np
 
-# Speed of the drone
-S = 10
-# Turn coefficient - needs to turn faster
-T = 1.5
-# Frames per second of the pygame window display
-# A low number also results in input lag, as input information is processed once per frame.
-FPS = 120
+S = 10      # Speed of the drone
+T = 1.5     # Turn coefficient - needs to turn faster
+E = 2     # Elevation coefficient - moving up/down faster
 
+# Next step ideas
+# - change or increase/decrease the speed based on how large the offset is
+# - use dX, dY, dR to optimize the speed of the drone
+# - how to ensure RC commands are sent/executed more quickly
 
 class motionTracking():
     """ Based on offset values returned by object_tracker,
@@ -38,7 +38,7 @@ class motionTracking():
         # only move if there is a significant offset or
         # the object is very close to the drone
         if np.abs(offset[0]) >= 40 or np.abs(offset[1]) >= 30 \
-                or offset[2] > 80 or offset[2] < 50:
+                or offset[2] > 50 or offset[2] < 30:
             self.send_rc_control = True
         else:
             return
@@ -46,9 +46,9 @@ class motionTracking():
         # if statement to control the process of moving
         # moving up/down based on y-offset
         if offset[1] < -30:
-            self.up_down_velocity = S   # move up
+            self.up_down_velocity = int(E*S)   # move up
         elif offset[1] > 30:
-            self.up_down_velocity = -S  # move down
+            self.up_down_velocity = int(-E*S)  # move down
 
         # rotating left/right based on x-offset
         if offset[0] < -40:
@@ -57,9 +57,9 @@ class motionTracking():
             self.yaw_velocity = int(T*S)   # turn clockwise
 
         # moving forward/back based on the radius
-        if offset[2] > 80:
+        if offset[2] > 50:
             self.for_back_velocity = -S     # move backwards
-        elif offset[2] < 50:
+        elif offset[2] < 30:
             self.for_back_velocity = S      # move forwards
 
     def update(self, tello):

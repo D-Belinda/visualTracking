@@ -8,6 +8,9 @@ from motion_tracking_class import motionTracking
 tello = Tello()
 tello.connect(False) # must be false - receiving state packet errors
 
+a = tello.get_battery()
+print(a)
+
 # in case the stream is already on, turn off and back on
 tello.streamoff()
 tello.streamon()
@@ -26,7 +29,7 @@ offset = None
 tello.takeoff()
 
 # sleep to allow everything time to get running
-time.sleep(2.0)
+time.sleep(1.5)
 
 
 while True:
@@ -45,7 +48,6 @@ while True:
     # print the offset
     offset = track.getOffset()
     print(offset)
-    time.sleep(1 / 60)
 
     # moving based on the offset
     move.move(offset)
