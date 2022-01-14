@@ -4,12 +4,18 @@ import time
 from object_tracking_class import object_tracker
 from motion_tracking_class import motionTracking
 
+# Next step ideas
+# - change or increase/decrease the speed based on how large the offset is
+# - use dX, dY, dR to optimize the speed of the drone
+# - how to ensure RC commands are sent/executed more quickly
+# - real time HSV adjustment and application (deep learning)
+
 # initialize the Tello object
 tello = Tello()
 tello.connect(False) # must be false - receiving state packet errors
 
-a = tello.get_battery()
-print(a)
+#a = tello.get_battery()
+#print(a)
 
 # in case the stream is already on, turn off and back on
 tello.streamoff()

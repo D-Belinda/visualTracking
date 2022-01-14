@@ -38,17 +38,12 @@ class motionTracking():
         # only move if there is a significant offset or
         # the object is very close to the drone
         if np.abs(offset[0]) >= 40 or np.abs(offset[1]) >= 30 \
-                or offset[2] > 50 or offset[2] < 30:
+                or offset[2] > 80 or offset[2] < 60:
             self.send_rc_control = True
         else:
             return
 
         # if statement to control the process of moving
-        # moving up/down based on y-offset
-        if offset[1] < -30:
-            self.up_down_velocity = int(E*S)   # move up
-        elif offset[1] > 30:
-            self.up_down_velocity = int(-E*S)  # move down
 
         # rotating left/right based on x-offset
         if offset[0] < -40:
@@ -56,10 +51,16 @@ class motionTracking():
         elif offset[0] > 40:
             self.yaw_velocity = int(T*S)   # turn clockwise
 
+        # moving up/down based on y-offset
+        if offset[1] < -30:
+            self.up_down_velocity = int(E*S)   # move up
+        elif offset[1] > 30:
+            self.up_down_velocity = int(-E*S)  # move down
+
         # moving forward/back based on the radius
-        if offset[2] > 50:
+        if offset[2] > 80:
             self.for_back_velocity = -S     # move backwards
-        elif offset[2] < 30:
+        elif offset[2] < 60:
             self.for_back_velocity = S      # move forwards
 
     def update(self, tello):
