@@ -13,10 +13,8 @@ import time
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-v", "--video",
-	help="path to the (optional) video file")
-ap.add_argument("-b", "--buffer", type=int, default=32,
-	help="max buffer size")
+ap.add_argument("-v", "--video", help="path to the (optional) video file")
+ap.add_argument("-b", "--buffer", type=int, default=32, help="max buffer size")
 args = vars(ap.parse_args())
 
 # initialize the list of tracked points, the frame counter,
@@ -28,12 +26,13 @@ direction = ""
 
 # if a video path was not supplied, grab the reference
 # to the webcam
-if not args.get("video", False):
-	vs = VideoStream(0).start()
+#if not args.get("video", False):
+	#vs = VideoStream(0).start()
 
 # otherwise, grab a reference to the video file
-else:
-	vs = cv2.VideoCapture(args["video"])
+#else:
+	#vs = cv2.VideoCapture(args["video"])
+vs = cv2.VideoCapture('object-control.MOV')
 
 # import hsv values
 hsv_value = np.load('hsv_value.npy')
@@ -45,7 +44,10 @@ time.sleep(2.0)
 # keep looping
 while True:
 	# grab the current frame
-	frame = vs.read()
+	ret, frame = vs.read()
+
+	if not ret:
+		break
 
 	# handle the frame from VideoCapture or VideoStream
 	frame = frame[1] if args.get("video", False) else frame
@@ -70,8 +72,7 @@ while True:
 
 	# find contours in the mask and initialize the current
 	# (x, y) center of the ball
-	cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-		cv2.CHAIN_APPROX_SIMPLE)
+	cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 	cnts = imutils.grab_contours(cnts)
 	center = None
 
@@ -89,8 +90,7 @@ while True:
 		if radius > 10:
 			# draw the circle and centroid on the frame,
 			# then update the list of tracked points
-			cv2.circle(frame, (int(x), int(y)), int(radius),
-				(0, 255, 255), 2)
+			cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
 			cv2.circle(frame, center, 5, (0, 0, 255), -1)
 			pts.appendleft(center)
 
@@ -136,16 +136,16 @@ while True:
 
 	# show the movement deltas and the direction of movement on
 	# the frame
-	cv2.putText(frame, direction, (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
-		0.65, (0, 0, 255), 3)
-	cv2.putText(frame, "dx: {}, dy: {}".format(dX, dY),
-		(10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX,
-		0.35, (0, 0, 255), 1)
+	cv2.putText(frame, direction, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 0, 255), 3)
+	cv2.putText(frame, "dx: {}, dy: {}".format(dX, dY), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
 
 	# show the frame to our screen and increment the frame counter
 	cv2.imshow("Frame", frame)
 	key = cv2.waitKey(1) & 0xFF
 	counter += 1
+
+	if counter % 10 == 0:
+		print("{} {}".format(dY, str(vs.get(cv2.CAP_PROP_POS_MSEC))))
 
 	# if the 'q' key is pressed, stop the loop
 	if key == ord("q"):
