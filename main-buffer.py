@@ -2,7 +2,9 @@ from djitellopy import Tello
 import cv2
 import time
 from object_tracking_class import object_tracker
-from motion_tracking_class import motionTracking
+from motion_tracking_class_buffer import motionTrackingBuffer
+
+FPS = 120
 
 # Next step ideas
 # - change or increase/decrease the speed based on how large the offset is
@@ -28,7 +30,7 @@ framecenter = (frame.shape[1] / 2, frame.shape[0] / 2)
 print(framecenter)
 
 # initialize the motion tracking class
-move = motionTracking()
+move = motionTrackingBuffer()
 offset = None
 
 # start flying
@@ -58,6 +60,8 @@ while True:
     # moving based on the offset
     move.move(offset)
     move.update(tello)
+
+    time.sleep(1/FPS)
 
     key = cv2.waitKey(1) & 0xFF
     # if the 'q' key is pressed, stop the loop and end the program

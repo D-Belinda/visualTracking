@@ -2,7 +2,7 @@ import numpy as np
 
 S = 10      # Speed of the drone
 T = 1.5     # Turn coefficient - needs to turn faster
-E = 2     # Elevation coefficient - moving up/down faster
+E = 2       # Elevation coefficient - moving up/down faster
 
 # Next step ideas
 # - change or increase/decrease the speed based on how large the offset is
@@ -68,3 +68,6 @@ class motionTracking():
         if self.send_rc_control:
             tello.send_rc_control(self.left_right_velocity, self.for_back_velocity,
                                   self.up_down_velocity, self.yaw_velocity)
+
+        # else:
+            # print(0, 0, 0, 0)
