@@ -4,6 +4,8 @@ import time
 from object_tracking_class import object_tracker
 from motion_tracking_class import motionTracking
 
+FPS = 60
+
 # Next step ideas
 # - change or increase/decrease the speed based on how large the offset is
 # - use dX, dY, dR to optimize the speed of the drone
@@ -59,6 +61,7 @@ while True:
     move.move(offset)
     move.update(tello)
 
+
     key = cv2.waitKey(1) & 0xFF
     # if the 'q' key is pressed, stop the loop and end the program
     if key == ord("q"):
@@ -66,6 +69,10 @@ while True:
         tello.streamoff()
         tello.end()
         break
+
+
+    time.sleep(1/FPS)
+
 
 # send command to the drone --> check response time >> what is the delay?
 # control at a fast rate >> see what is causing the delay
@@ -80,3 +87,4 @@ while True:
 
 # my job == control problem
 # run too fast, include a freeze/sleep time
+# set acceleration instead of speed

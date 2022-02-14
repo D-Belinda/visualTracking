@@ -7,7 +7,7 @@ import time
 tello = Tello()
 tello.connect(False) # must set to False, will cause state packet error
 
-# turn stream off and then on
+# turn stream off and then' on
 tello.streamoff()
 tello.streamon()
 

@@ -49,6 +49,7 @@ class motionTrackingBuffer():
 
         # only move if there is a significant offset or
         # the object is very close to the drone
+        # set parameters as global variable
         if np.abs(offset[0]) >= 40 or np.abs(offset[1]) >= 30 \
                 or offset[2] > 55 or offset[2] < 45:
             self.send_rc_control = True
@@ -63,6 +64,7 @@ class motionTrackingBuffer():
         elif np.abs(offset[0]) <= 35:
             self.x_buffer_in = True
 
+        # move bound directly in above if
         if self.x_buffer_out:
             self.x_bound = 35
         elif self.x_buffer_in:
