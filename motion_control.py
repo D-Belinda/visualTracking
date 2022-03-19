@@ -60,6 +60,8 @@ class motion_controller:
         if ret is None:
             return events
         x, y, size = ret
+        if x is None or y is None or size is None:
+            return events
         mid_x_range = FRAME_WIDTH/3, FRAME_WIDTH*2/3
         if x < mid_x_range[0]:
             events.append("left")

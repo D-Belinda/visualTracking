@@ -103,9 +103,10 @@ class FrontEnd(object):
             if len(self.ot.get_circle()) != 0:
                 frame = cv2.putText(frame, "Tx={}  Ty={}".format(int(self.ot.get_circle()[0]), int(self.ot.get_circle()[1])), (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-
+            # update target location for motion controller
             self.motion_controller.add(self.ot.get_circle())
 
+            # allow for key input while not in hand control
             for event in pygame.event.get():
                 if event.type == pygame.USEREVENT + 1:
                     self.update()
@@ -123,6 +124,7 @@ class FrontEnd(object):
                 elif event.type == pygame.KEYUP and (self.handControl or event.key == pygame.K_l):
                     self.keyup(event.key)
 
+            # receive instructions from motion_control
             events = self.motion_controller.instruct()
             # display events
             frame = cv2.putText(frame, "events: " + str(events), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
