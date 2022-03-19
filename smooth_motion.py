@@ -125,7 +125,7 @@ class FrontEnd(object):
                     self.keyup(event.key)
 
             self.acceleration = self.motion_controller.instruct()
-            # display acceleration (x, y, forward/back)
+            # display acceleration (x, y, forward/backward)
             frame = cv2.putText(frame, "accelerations: " + str(self.acceleration), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             self.yaw_velocity += self.acceleration[0] / FPS
 
