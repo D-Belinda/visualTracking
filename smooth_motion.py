@@ -44,7 +44,8 @@ class FrontEnd(object):
         self.left_right_velocity = 0
         self.up_down_velocity = 0
         self.yaw_velocity = 0
-        self.speed = 10
+        self.acceleration = 0.0, 0.0, 0.0
+        self.speed = 10 # do not change this
 
         self.send_rc_control = False
 
@@ -123,16 +124,10 @@ class FrontEnd(object):
                 elif event.type == pygame.KEYUP and (self.handControl or event.key == pygame.K_l):
                     self.keyup(event.key)
 
-            events = self.motion_controller.instruct()
-            # display events
-            frame = cv2.putText(frame, "events: " + str(events), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            if not self.handControl and self.tello.is_flying:
-                self.yaw_velocity = 0
-                for event in events:
-                    if event == "left":
-                        self.yaw_velocity = -S//3
-                    elif event == "right":
-                        self.yaw_velocity = S//3
+            self.acceleration = self.motion_controller.instruct()
+            # display acceleration (x, y, forward/back)
+            frame = cv2.putText(frame, "accelerations: " + str(self.acceleration), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            self.yaw_velocity += self.acceleration[0] / FPS
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = np.rot90(frame)
