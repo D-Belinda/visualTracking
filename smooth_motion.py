@@ -8,7 +8,7 @@ from hsv_class import hsv_setter
 from motion_control import motion_controller
 
 # Speed of the drone
-S = 100
+S = 10
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 FPS = 80
@@ -105,7 +105,7 @@ class FrontEnd(object):
                 frame = cv2.putText(frame, "Tx={}  Ty={}".format(int(self.ot.get_circle()[0]), int(self.ot.get_circle()[1])), (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
 
-            self.motion_controller.add(self.ot.get_circle())
+            self.motion_controller.add_location(self.ot.get_circle())
 
             for event in pygame.event.get():
                 if event.type == pygame.USEREVENT + 1:
@@ -127,9 +127,9 @@ class FrontEnd(object):
             self.acceleration = self.motion_controller.instruct()
             # display acceleration (x, y, forward/backward)
             frame = cv2.putText(frame, "accelerations: " + str(self.acceleration), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            self.yaw_velocity += self.acceleration[0] / FPS
+            self.yaw_velocity += int(self.acceleration[0] / FPS)
 
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = np.rot90(frame)
             frame = np.flipud(frame)
 
