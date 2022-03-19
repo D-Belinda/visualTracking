@@ -4,7 +4,7 @@ import time
 from object_tracking_class import object_tracker
 from motion_tracking_class import motionTracking
 
-FPS = 60
+FPS = 80
 
 # Next step ideas
 # - change or increase/decrease the speed based on how large the offset is

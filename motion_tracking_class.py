@@ -1,8 +1,8 @@
 import numpy as np
 
-S = 10      # Speed of the drone
-T = 1.5     # Turn coefficient - needs to turn faster
-E = 2       # Elevation coefficient - moving up/down faster
+S = 20      # Speed of the drone
+T = 0.75    # Turn coefficient - needs to turn faster
+E = 1       # Elevation coefficient - moving up/down faster
 
 # Next step ideas
 # - change or increase/decrease the speed based on how large the offset is
@@ -37,8 +37,8 @@ class motionTracking():
 
         # only move if there is a significant offset or
         # the object is very close to the drone
-        if np.abs(offset[0]) >= 40 or np.abs(offset[1]) >= 30 \
-                or offset[2] > 80 or offset[2] < 60:
+        if np.abs(offset[0]) >= 40 or np.abs(offset[1]) >= 20 \
+                or offset[2] > 80 or offset[2] < 65:
             self.send_rc_control = True
         else:
             return
@@ -52,22 +52,23 @@ class motionTracking():
             self.yaw_velocity = int(T*S)   # turn clockwise
 
         # moving up/down based on y-offset
-        if offset[1] < -30:
-            self.up_down_velocity = int(E*S)   # move up
-        elif offset[1] > 30:
-            self.up_down_velocity = int(-E*S)  # move down
+        #if offset[1] < -20:
+            #self.up_down_velocity = int(E*S)   # move up
+        #elif offset[1] > 20:
+            #self.up_down_velocity = int(-E*S)  # move down
 
         # moving forward/back based on the radius
-        if offset[2] > 80:
-            self.for_back_velocity = -S     # move backwards
-        elif offset[2] < 60:
-            self.for_back_velocity = S      # move forwards
+        #if offset[2] > 80:
+            #self.for_back_velocity = -S     # move backwards
+        #elif offset[2] < 65:
+            #self.for_back_velocity = S      # move forwards
 
     def update(self, tello):
         """ Update routine. Send velocities to Tello."""
         if self.send_rc_control:
             tello.send_rc_control(self.left_right_velocity, self.for_back_velocity,
                                   self.up_down_velocity, self.yaw_velocity)
-
+            print(self.left_right_velocity, self.for_back_velocity,
+                  self.up_down_velocity, self.yaw_velocity)
         # else:
             # print(0, 0, 0, 0)

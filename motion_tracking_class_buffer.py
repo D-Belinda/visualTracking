@@ -22,7 +22,7 @@ class motionTrackingBuffer():
         self.left_right_velocity = 0
         self.up_down_velocity = 0
         self.yaw_velocity = 0
-        self.speed = 10
+        self.speed = S
 
         self.send_rc_control = False
         self.y_buffer_out = self.y_buffer_in = False
@@ -61,13 +61,9 @@ class motionTrackingBuffer():
         # rotating left/right based on x-offset
         if np.abs(offset[0]) >= 45:
             self.x_buffer_out = True
+            self.x_bound = 35
         elif np.abs(offset[0]) <= 35:
             self.x_buffer_in = True
-
-        # move bound directly in above if
-        if self.x_buffer_out:
-            self.x_bound = 35
-        elif self.x_buffer_in:
             self.x_bound = 45
         else:
             self.x_bound = 40
@@ -80,12 +76,9 @@ class motionTrackingBuffer():
         # moving up/down based on y-offset
         if np.abs(offset[1]) >= 35:
             self.y_buffer_out = True
+            self.y_bound = 25
         elif np.abs(offset[1]) <= 25:
             self.y_buffer_in = True
-
-        if self.y_buffer_out:
-            self.y_bound = 25
-        elif self.y_buffer_in:
             self.y_bound = 35
         else:
             self.y_bound = 30
@@ -98,12 +91,9 @@ class motionTrackingBuffer():
         # moving forward/back based on the radius
         if np.abs(offset[2]) >= 55:
             self.r_buffer_out = True
+            self.r_bound = 45
         elif np.abs(offset[2]) <= 45:
             self.r_buffer_in = True
-
-        if self.r_buffer_out:
-            self.r_bound = 45
-        elif self.r_buffer_in:
             self.r_bound = 55
         else:
             self.r_bound = 50
