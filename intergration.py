@@ -6,6 +6,7 @@ import time
 from object_tracking_class import object_tracker
 from hsv_class import hsv_setter
 from motion_control import motion_controller
+from data_logger import logger
 
 # Speed of the drone
 S = 10
@@ -44,7 +45,7 @@ class FrontEnd(object):
         self.left_right_velocity = 0
         self.up_down_velocity = 0
         self.yaw_velocity = 0
-        self.acceleration = 0.0, 0.0, 0.0
+        self.acceleration = 0.0, 0.0, 0.0 # yaw, up/down, forward/backward
         self.speed = 10 # do not change this
 
         self.send_rc_control = False
@@ -55,6 +56,7 @@ class FrontEnd(object):
         self.ot = object_tracker()
         self.hsv_control = hsv_setter()
         self.motion_controller = motion_controller(FPS)
+        self.logger = logger()
 
     def run(self):
 
@@ -137,6 +139,13 @@ class FrontEnd(object):
             frame = pygame.surfarray.make_surface(frame)
             self.screen.blit(frame, (0, 0))
             pygame.display.update()
+
+            # logging data
+            # FIX: verify yaw displacement
+            # FIX: find ways to get forward/back displacement
+            self.logger.update_drone((self.tello.get_yaw(), self.tello.get_height(), 0),
+                                     (self.yaw_velocity, self.up_down_velocity, self.for_back_velocity),
+                                     self.acceleration)
 
             time.sleep(1 / FPS)
 

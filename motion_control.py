@@ -9,7 +9,7 @@ class motion_controller:
         self.ddx = self.ddy = self.ddsize = 0.0
         self.q = deque()  # a queue of circles
         self.FPS = fps
-        self.TIME_TO_TARGET = 10   # sensitivity
+        self.TIME_TO_TARGET = 2.5   # sensitivity
         self.PIX_TO_DIST = 1/100    # adjust based on distance, fix later
         self.LOCATION_DELAY = 0.1  # use the average of the datas from the last 0.1 seconds to determine the location and size of the object
         self.VELOCITY_DELAY = 0.15
