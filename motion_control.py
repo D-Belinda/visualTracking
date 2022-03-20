@@ -77,3 +77,12 @@ class motion_controller:
         if diagnostic:
             print(self.x, self.dx, self.ddx)
         return (ddx_drone, 0, 0)
+
+    def get_obj_displacement(self):
+        return self.x, self.y, self.size
+
+    def get_obj_velocity(self):
+        return self.dx, self.dy, self.dsize
+
+    def get_obj_acceleration(self):
+        return self.ddx, self.ddy, self.ddsize

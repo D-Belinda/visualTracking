@@ -146,6 +146,9 @@ class FrontEnd(object):
             self.logger.update_drone((self.tello.get_yaw(), self.tello.get_height(), 0),
                                      (self.yaw_velocity, self.up_down_velocity, self.for_back_velocity),
                                      self.acceleration)
+            self.logger.update_obj(self.motion_controller.get_obj_displacement(),
+                                   self.motion_controller.get_obj_velocity(),
+                                   self.motion_controller.get_obj_acceleration())
 
             time.sleep(1 / FPS)
 
