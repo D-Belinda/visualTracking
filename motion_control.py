@@ -10,7 +10,7 @@ class motion_controller:
         self.q = deque()  # a queue of circles
         self.FPS = fps
         self.TIME_TO_TARGET = 10   # sensitivity
-        self.PIX_TO_DIST = 1/1    # adjust based on distance, fix later
+        self.PIX_TO_DIST = 1/100    # adjust based on distance, fix later
         self.LOCATION_DELAY = 0.1  # use the average of the datas from the last 0.1 seconds to determine the location and size of the object
         self.VELOCITY_DELAY = 0.15
         self.ACC_DELAY = 0.2
@@ -51,27 +51,29 @@ class motion_controller:
         n_frames = min(len(self.q), int(self.VELOCITY_DELAY * self.FPS))
         if n_frames == 0:
             return
-        dx = (self.q[n_frames - 1][0] - self.q[0][0]) / n_frames / self.FPS
-        dy = (self.q[n_frames - 1][1] - self.q[0][1]) / n_frames / self.FPS
-        dsize = (self.q[n_frames - 1][2] - self.q[0][2]) / n_frames / self.FPS
+        dx = (self.q[0][0] - self.q[n_frames - 1][0]) / (n_frames / self.FPS)
+        dy = (self.q[0][1] - self.q[n_frames - 1][1]) / (n_frames / self.FPS)
+        dsize = (self.q[0][2] - self.q[n_frames - 1][2]) / (n_frames / self.FPS)
 
         n_frames = min(len(self.q), int(self.ACC_DELAY * self.FPS))
         if n_frames < 2:
             return
         vxi = (self.q[n_frames-2][0] - self.q[n_frames-1][0]) * self.FPS
         vxf = (self.q[0][0] - self.q[1][0]) * self.FPS
-        ddx = (vxf-vxi) * self.FPS
+        ddx = (vxf-vxi) / (n_frames / self.FPS)
         vyi = (self.q[n_frames - 2][1] - self.q[n_frames - 1][1]) * self.FPS
         vyf = (self.q[0][1] - self.q[1][1]) * self.FPS
-        ddy = (vyf - vyi) * self.FPS
+        ddy = (vyf - vyi) / (n_frames / self.FPS)
         vsi = (self.q[n_frames - 2][2] - self.q[n_frames - 1][2]) * self.FPS
         vsf = (self.q[0][2] - self.q[1][2]) * self.FPS
-        ddsize = (vsf - vsi) * self.FPS
+        ddsize = (vsf - vsi) / (n_frames / self.FPS)
 
         self.__update_params(x,y,size,dx,dy,dsize,ddx,ddy,ddsize)
 
-    def instruct(self):
+    def instruct(self, diagnostic=False):
         self.__process()
         ddx_drone = 2*self.x/(self.TIME_TO_TARGET**2) + 2*self.dx/self.TIME_TO_TARGET + self.ddx
         ddx_drone *= self.PIX_TO_DIST
+        if diagnostic:
+            print(self.x, self.dx, self.ddx)
         return (ddx_drone, 0, 0)
