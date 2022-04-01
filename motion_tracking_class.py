@@ -46,10 +46,10 @@ class motionTracking():
         # if statement to control the process of moving
 
         # rotating left/right based on x-offset
-        if offset[0] < -40:
-            self.yaw_velocity = int(-T*S)    # turn counter clockwise
-        elif offset[0] > 40:
-            self.yaw_velocity = int(T*S)   # turn clockwise
+        #if offset[0] < -40:
+            #self.yaw_velocity = int(-T*S)    # turn counter clockwise
+        #elif offset[0] > 40:
+            #self.yaw_velocity = int(T*S)   # turn clockwise
 
         # moving up/down based on y-offset
         #if offset[1] < -20:
@@ -58,10 +58,10 @@ class motionTracking():
             #self.up_down_velocity = int(-E*S)  # move down
 
         # moving forward/back based on the radius
-        #if offset[2] > 80:
-            #self.for_back_velocity = -S     # move backwards
-        #elif offset[2] < 65:
-            #self.for_back_velocity = S      # move forwards
+        if offset[2] > 80:
+            self.for_back_velocity = -S     # move backwards
+        elif offset[2] < 65:
+            self.for_back_velocity = S      # move forwards
 
     def update(self, tello):
         """ Update routine. Send velocities to Tello."""
@@ -70,5 +70,5 @@ class motionTracking():
                                   self.up_down_velocity, self.yaw_velocity)
             print(self.left_right_velocity, self.for_back_velocity,
                   self.up_down_velocity, self.yaw_velocity)
-        # else:
-            # print(0, 0, 0, 0)
+        else:
+            print(0, 0, 0, 0)
