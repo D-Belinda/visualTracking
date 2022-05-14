@@ -9,15 +9,25 @@ Ksize = (1, 1, 1)  # P, I, D constants
 
 MAX_SPEED = 80
 
+
+def fade_function(
+        n: int):  # to decrease the weight of older frames w a geometric series that decreases over time as coefficients
+    return (1 / 2) ** n
+
+
+def ff_sum(lower_bound: int, upper_bound: int):  # calculate the sum of the series in [lower, upper)
+    constant = fade_function(1)
+    return (fade_function(lower_bound)-fade_function(upper_bound)) / (1 - constant)
+
+
 class motion_controller:
     def __init__(self, fps, instruction_interval):
         self.x = self.y = self.size = self.dx = self.dy = self.dsize = 0.0
         self.ix = self.iy = self.isize = 0.0
         self.q = deque()  # a queue of circles
         self.FPS = fps
-        self.TIME_TO_TARGET = 0.5  # sensitivity
         self.PIX_TO_DIST = 1 / 20  # adjust based on distance, fix later
-        self.LOCATION_DELAY = 0.05  # use the average of the datas from the last 0.1 seconds to determine the location and size of the object
+        self.LOCATION_DELAY = 0.1  # use the average of the datas from the last 0.1 seconds to determine the location and size of the object
         self.VELOCITY_DELAY = 0.1
         self.MAX_QUEUE_LENGTH = int(max(self.LOCATION_DELAY, self.VELOCITY_DELAY) * self.FPS + 1)
         self.INSTRUCTION_INTERVAL = instruction_interval
@@ -44,24 +54,28 @@ class motion_controller:
             return
         x, y, size = 0, 0, 0
         for i in range(n_frames):
-            x += self.q[i][0]
-            y += self.q[i][1]
-            size += self.q[i][2]
-        x = x / n_frames
-        y = y / n_frames
-        size = size / n_frames
+            x += self.q[i][0]*fade_function(i)
+            y += self.q[i][1]*fade_function(i)
+            size += self.q[i][2]*fade_function(i)
+        x /= ff_sum(0, n_frames)
+        y /= ff_sum(0, n_frames)
+        size /= ff_sum(0, n_frames)
 
         n_frames = min(len(self.q), int(self.VELOCITY_DELAY * self.FPS))
         if n_frames == 0:
             return
-        dx = (self.q[0][0] - self.q[n_frames - 1][0]) / (n_frames / self.FPS)
-        dy = (self.q[0][1] - self.q[n_frames - 1][1]) / (n_frames / self.FPS)
-        dsize = (self.q[0][2] - self.q[n_frames - 1][2]) / (n_frames / self.FPS)
+        dx = dy = dsize = 0
+        for i in range(1, n_frames):
+            dx += (self.q[i][0] - self.q[i-1][0]) / self.FPS * fade_function(i)
+            dy += (self.q[i][1] - self.q[i-1][1]) / self.FPS * fade_function(i)
+            dsize += (self.q[i][2] - self.q[i-1][2]) / self.FPS * fade_function(i)
+        dx /= ff_sum(1, n_frames)
+        dy /= ff_sum(1, n_frames)
+        dsize /= ff_sum(1, n_frames)
 
         self.ix += x * self.INSTRUCTION_INTERVAL / self.FPS
         self.iy += y * self.INSTRUCTION_INTERVAL / self.FPS
         self.isize += size * self.INSTRUCTION_INTERVAL / self.FPS
-
         self.ix = min(max(self.ix, -500), 500)
         self.iy = min(max(self.iy, -500), 500)
         self.isize = min(max(self.isize, -500), 500)
@@ -70,11 +84,6 @@ class motion_controller:
 
     def instruct(self, diagnostic=True):
         self.__process()
-        '''
-        ddx_drone = 2*self.x/(self.TIME_TO_TARGET**2) + 2*self.dx/self.TIME_TO_TARGET + self.ddx
-        ddx_drone *= self.PIX_TO_DIST
-        '''
-        # dx_drone = (self.x + self.dx * self.TIME_TO_TARGET) / self.TIME_TO_TARGET
         dx_drone = Kx[0] * self.x + Kx[1] * self.ix + Kx[2] * self.dx
         dx_drone *= self.PIX_TO_DIST
         dx_drone = min(max(dx_drone, -MAX_SPEED), MAX_SPEED)

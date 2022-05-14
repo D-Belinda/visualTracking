@@ -13,7 +13,7 @@ S = 10
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 FPS = 80
-INSTRUCTION_INTERVAL = 3
+INSTRUCTION_INTERVAL = 1
 instruction_counter = 0
 
 
