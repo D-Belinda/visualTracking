@@ -3,29 +3,32 @@ from collections import deque
 FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
+Kx = (1.0, 0.0, 0.4)  # P, I, D constants
+Ky = (1, 1, 1)  # P, I, D constants
+Ksize = (1, 1, 1)  # P, I, D constants
+
+MAX_SPEED = 80
+
 class motion_controller:
-    def __init__(self, fps):
+    def __init__(self, fps, instruction_interval):
         self.x = self.y = self.size = self.dx = self.dy = self.dsize = 0.0
-        self.ddx = self.ddy = self.ddsize = 0.0
+        self.ix = self.iy = self.isize = 0.0
         self.q = deque()  # a queue of circles
         self.FPS = fps
-        self.TIME_TO_TARGET = 2.5   # sensitivity
-        self.PIX_TO_DIST = 1/100    # adjust based on distance, fix later
-        self.LOCATION_DELAY = 0.1  # use the average of the datas from the last 0.1 seconds to determine the location and size of the object
-        self.VELOCITY_DELAY = 0.15
-        self.ACC_DELAY = 0.2
-        self.MAX_QUEUE_LENGTH = int(max(self.LOCATION_DELAY, self.VELOCITY_DELAY, self.ACC_DELAY) * self.FPS + 1)
+        self.TIME_TO_TARGET = 0.5  # sensitivity
+        self.PIX_TO_DIST = 1 / 20  # adjust based on distance, fix later
+        self.LOCATION_DELAY = 0.05  # use the average of the datas from the last 0.1 seconds to determine the location and size of the object
+        self.VELOCITY_DELAY = 0.1
+        self.MAX_QUEUE_LENGTH = int(max(self.LOCATION_DELAY, self.VELOCITY_DELAY) * self.FPS + 1)
+        self.INSTRUCTION_INTERVAL = instruction_interval
 
-    def __update_params(self, x, y, size, dx, dy, dsize, ddx, ddy, ddsize):
+    def __update_params(self, x, y, size, dx, dy, dsize):
         self.x = x
         self.y = y
         self.size = size
         self.dx = dx
         self.dy = dy
         self.dsize = dsize
-        self.ddx = ddx
-        self.ddy = ddy
-        self.ddsize = ddsize
 
     def add_location(self, circle):
         if len(circle) == 0:
@@ -55,28 +58,30 @@ class motion_controller:
         dy = (self.q[0][1] - self.q[n_frames - 1][1]) / (n_frames / self.FPS)
         dsize = (self.q[0][2] - self.q[n_frames - 1][2]) / (n_frames / self.FPS)
 
-        n_frames = min(len(self.q), int(self.ACC_DELAY * self.FPS))
-        if n_frames < 2:
-            return
-        vxi = (self.q[n_frames-2][0] - self.q[n_frames-1][0]) * self.FPS
-        vxf = (self.q[0][0] - self.q[1][0]) * self.FPS
-        ddx = (vxf-vxi) / (n_frames / self.FPS)
-        vyi = (self.q[n_frames - 2][1] - self.q[n_frames - 1][1]) * self.FPS
-        vyf = (self.q[0][1] - self.q[1][1]) * self.FPS
-        ddy = (vyf - vyi) / (n_frames / self.FPS)
-        vsi = (self.q[n_frames - 2][2] - self.q[n_frames - 1][2]) * self.FPS
-        vsf = (self.q[0][2] - self.q[1][2]) * self.FPS
-        ddsize = (vsf - vsi) / (n_frames / self.FPS)
+        self.ix += x * self.INSTRUCTION_INTERVAL / self.FPS
+        self.iy += y * self.INSTRUCTION_INTERVAL / self.FPS
+        self.isize += size * self.INSTRUCTION_INTERVAL / self.FPS
 
-        self.__update_params(x,y,size,dx,dy,dsize,ddx,ddy,ddsize)
+        self.ix = min(max(self.ix, -500), 500)
+        self.iy = min(max(self.iy, -500), 500)
+        self.isize = min(max(self.isize, -500), 500)
 
-    def instruct(self, diagnostic=False):
+        self.__update_params(x, y, size, dx, dy, dsize)
+
+    def instruct(self, diagnostic=True):
         self.__process()
+        '''
         ddx_drone = 2*self.x/(self.TIME_TO_TARGET**2) + 2*self.dx/self.TIME_TO_TARGET + self.ddx
         ddx_drone *= self.PIX_TO_DIST
+        '''
+        # dx_drone = (self.x + self.dx * self.TIME_TO_TARGET) / self.TIME_TO_TARGET
+        dx_drone = Kx[0] * self.x + Kx[1] * self.ix + Kx[2] * self.dx
+        dx_drone *= self.PIX_TO_DIST
+        dx_drone = min(max(dx_drone, -MAX_SPEED), MAX_SPEED)
+
         if diagnostic:
-            print(self.x, self.dx, self.ddx)
-        return (ddx_drone, 0, 0)
+            print(self.x, self.dx, self.ix)
+        return (dx_drone, 0, 0)
 
     def get_obj_displacement(self):
         return self.x, self.y, self.size
@@ -84,5 +89,5 @@ class motion_controller:
     def get_obj_velocity(self):
         return self.dx, self.dy, self.dsize
 
-    def get_obj_acceleration(self):
-        return self.ddx, self.ddy, self.ddsize
+    def get_obj_integral(self):
+        return self.ix, self.iy, self.isize
