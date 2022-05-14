@@ -3,9 +3,9 @@ import numpy as np
 FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
-Kx = (1.0, 0.0, 0.4)  # P, I, D constants
-Ky = (1, 1, 1)  # P, I, D constants
-Ksize = (1, 1, 1)  # P, I, D constants
+Kx = np.array([1.0, 0.0, 0.4])  # P, I, D constants
+Ky = np.array([1, 1, 1])  # P, I, D constants
+Ksize = np.array([1, 1, 1])  # P, I, D constants
 
 MAX_SPEED = 80
 
@@ -13,6 +13,8 @@ FADE_COEFFICIENT = 1 / 2
 
 
 class motion_controller:
+    PIX_TO_DIST: float
+
     def __init__(self, fps, instruction_interval):
         self.x = self.y = self.size = 0.0
         self.dx = self.dy = self.dsize = 0.0
@@ -55,14 +57,15 @@ class motion_controller:
         self.__update_params_tuple(xys, dxys, ixys)
 
     def instruct(self, diagnostic=False):
-        dx_drone = Kx[0] * self.x + Kx[1] * self.ix + Kx[2] * self.dx
-        dx_drone *= self.PIX_TO_DIST
-        dx_drone *= self.INSTRUCTION_INTERVAL
-        dx_drone = min(max(dx_drone, -MAX_SPEED), MAX_SPEED)
+        dx_drone = float(np.sum(np.multiply(Kx, np.array([self.x, self.dx, self.ix]))))
+        dy_drone = float(np.sum(np.multiply(Ky, np.array([self.y, self.dy, self.iy]))))
+        dz_drone = float(np.sum(np.multiply(Ksize, np.array([self.size, self.dsize, self.isize]))))
 
         if diagnostic:
             print(self.x, self.dx, self.ix)
-        return dx_drone, 0, 0
+        ret = np.array([dx_drone, 0, 0])*self.PIX_TO_DIST*self.INSTRUCTION_INTERVAL
+        ret = np.clip(ret, -MAX_SPEED, MAX_SPEED)
+        return tuple(ret)
 
     def get_obj_displacement(self):
         return self.x, self.y, self.size
