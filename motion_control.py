@@ -3,21 +3,22 @@ from collections import deque
 FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
-Kx = (1.0, 0.0, 0.4)  # P, I, D constants
+Kx = (1.0, 0.2, -2.5)  # P, I, D constants
 Ky = (1, 1, 1)  # P, I, D constants
 Ksize = (1, 1, 1)  # P, I, D constants
 
-MAX_SPEED = 80
+MAX_SPEED = 100
 
 
-def fade_function(
-        n: int):  # to decrease the weight of older frames w a geometric series that decreases over time as coefficients
-    return (1 / 2) ** n
+def fade_function(n: int):
+    # to decrease the weight of older frames w a geometric series that decreases over time as coefficients
+    return (1 / 4) ** n
 
 
 def ff_sum(lower_bound: int, upper_bound: int):  # calculate the sum of the series in [lower, upper)
     constant = fade_function(1)
-    return (fade_function(lower_bound)-fade_function(upper_bound)) / (1 - constant)
+    ret = (fade_function(lower_bound)-fade_function(upper_bound)) / (1 - constant)
+    return max(1.0, ret)
 
 
 class motion_controller:
@@ -26,7 +27,7 @@ class motion_controller:
         self.ix = self.iy = self.isize = 0.0
         self.q = deque()  # a queue of circles
         self.FPS = fps
-        self.PIX_TO_DIST = 1 / 20  # adjust based on distance, fix later
+        self.PIX_TO_DIST = 1 / 10  # adjust based on distance, fix later
         self.LOCATION_DELAY = 0.1  # use the average of the datas from the last 0.1 seconds to determine the location and size of the object
         self.VELOCITY_DELAY = 0.1
         self.MAX_QUEUE_LENGTH = int(max(self.LOCATION_DELAY, self.VELOCITY_DELAY) * self.FPS + 1)
@@ -66,9 +67,9 @@ class motion_controller:
             return
         dx = dy = dsize = 0
         for i in range(1, n_frames):
-            dx += (self.q[i][0] - self.q[i-1][0]) / self.FPS * fade_function(i)
-            dy += (self.q[i][1] - self.q[i-1][1]) / self.FPS * fade_function(i)
-            dsize += (self.q[i][2] - self.q[i-1][2]) / self.FPS * fade_function(i)
+            dx += (self.q[i-1][0] - self.q[i][0]) / self.FPS * fade_function(i)
+            dy += (self.q[i-1][1] - self.q[i][1]) / self.FPS * fade_function(i)
+            dsize += (self.q[i-1][2] - self.q[i][2]) / self.FPS * fade_function(i)
         dx /= ff_sum(1, n_frames)
         dy /= ff_sum(1, n_frames)
         dsize /= ff_sum(1, n_frames)
