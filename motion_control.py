@@ -3,13 +3,13 @@ import numpy as np
 FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
-Kx = np.array([1.0, 0.0, 0.4])  # P, I, D constants
+Kx = np.array([1.0, 0.2, -2.5])  # P, I, D constants
 Ky = np.array([1, 1, 1])  # P, I, D constants
 Ksize = np.array([1, 1, 1])  # P, I, D constants
 
-MAX_SPEED = 80
+MAX_SPEED = 100
 
-FADE_COEFFICIENT = 1 / 2
+FADE_COEFFICIENT = 1 / 3
 
 
 class motion_controller:
@@ -47,7 +47,7 @@ class motion_controller:
         ixys = np.array([self.ix, self.iy, self.isize])
 
         if not self.x == self.y == self.size == 0.0:
-            dxys = np.add(dxys*FADE_COEFFICIENT, np.subtract(xys, circle_np)/self.FPS) / (1+FADE_COEFFICIENT)
+            dxys = np.add(dxys*FADE_COEFFICIENT, np.subtract(circle_np, xys)/self.FPS) / (1+FADE_COEFFICIENT)
 
         xys = np.add(FADE_COEFFICIENT*xys, circle_np) / (1+FADE_COEFFICIENT)
 
