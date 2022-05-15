@@ -20,7 +20,7 @@ class motion_controller:
         self.dx = self.dy = self.dsize = 0.0
         self.ix = self.iy = self.isize = 0.0
         self.FPS = fps
-        self.PIX_TO_DIST = 1 / 20  # adjust based on distance, fix later
+        self.PIX_TO_DIST = 1 / 10  # adjust based on distance, fix later
         self.INSTRUCTION_INTERVAL = instruction_interval
 
     def __update_params(self, x, y, size, dx, dy, dsize, ix, iy, isize):
