@@ -105,12 +105,6 @@ class FrontEnd(object):
 
             # display location of the target
             circle = self.ot.get_circle()
-            if len(circle) != 0:
-                circle = (circle[0] - int(960 / 2), circle[1] - int(720 / 2), circle[2])
-                frame = cv2.putText(frame,
-                                    "Tx={}  Ty={}".format(int(circle[0]), int(circle[1])),
-                                    (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-
             self.motion_controller.add_location(circle)
 
             for event in pygame.event.get():
@@ -134,14 +128,19 @@ class FrontEnd(object):
                 #print("here")
                 #self.v = self.motion_controller.instruct()
                 #instruction_counter = (instruction_counter + 1) % INSTRUCTION_INTERVAL
+
             # display acceleration (x, y, forward/backward)
-            self.v = self.motion_controller.instruct()
-            instruction_counter = (instruction_counter + 1) % INSTRUCTION_INTERVAL
-            frame = cv2.putText(frame, "velocities: " + str((int(self.v[0]), int(self.v[1]))), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1,
+            self.v = (np.array(self.motion_controller.instruct()).astype(int))
+            displacements = tuple(np.array(self.motion_controller.get_obj_displacement()).astype(int))
+            frame = cv2.putText(frame,
+                                'displacements: ' + str(displacements),
+                                (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            frame = cv2.putText(frame, "velocities: " + str(self.v), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                 (255, 255, 255), 2)
             if self.tello.is_flying:
                 self.left_right_velocity = int(self.v[0])
                 self.up_down_velocity = int(self.v[1])
+                self.for_back_velocity = int(self.v[2])
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = np.rot90(frame)
