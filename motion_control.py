@@ -4,7 +4,7 @@ FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
 Kx = np.array([1.0, 0.2, -5.0])  # P, I, D constants
-Ky = np.array([1.0, 0.2, -2.5])  # P, I, D constants
+Ky = np.array([2.0, 0.4, -4.0])  # P, I, D constants
 Ksize = np.array([1, 1, 1])  # P, I, D constants
 
 MAX_SPEED = 100
@@ -13,14 +13,13 @@ FADE_COEFFICIENT = 1 / 3
 
 
 class motion_controller:
-    PIX_TO_DIST: float
 
     def __init__(self, fps, instruction_interval):
         self.x = self.y = self.size = 0.0
         self.dx = self.dy = self.dsize = 0.0
         self.ix = self.iy = self.isize = 0.0
         self.FPS = fps
-        self.DIST_TO_PIX = 1 / 8  # adjust based on distance, fix later
+        self.DIST_TO_PIX = 1 / 12  # adjust based on distance, fix later
         self.INSTRUCTION_INTERVAL = instruction_interval
         self.I_MAX = 50 / self.DIST_TO_PIX / Kx[1]  # maximum value for ix
 
@@ -66,7 +65,7 @@ class motion_controller:
         if diagnostic:
             print('PID', self.x, self.ix, self.dx)
             print(list(np.multiply(Kx, np.array([self.x, self.ix, self.dx]))))
-        ret = np.array([dx_drone, 0, 0]) * self.DIST_TO_PIX * self.INSTRUCTION_INTERVAL
+        ret = np.array([dx_drone, -dy_drone, 0]) * self.DIST_TO_PIX * self.INSTRUCTION_INTERVAL
         ret = np.clip(ret, -MAX_SPEED, MAX_SPEED)
         return tuple(ret)
 

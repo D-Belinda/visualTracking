@@ -137,9 +137,11 @@ class FrontEnd(object):
             # display acceleration (x, y, forward/backward)
             self.v = self.motion_controller.instruct()
             instruction_counter = (instruction_counter + 1) % INSTRUCTION_INTERVAL
-            frame = cv2.putText(frame, "velocities: " + str(int(self.v[0])), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1,
+            frame = cv2.putText(frame, "velocities: " + str((int(self.v[0]), int(self.v[1]))), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                 (255, 255, 255), 2)
-            self.left_right_velocity = int(self.v[0])
+            if self.tello.is_flying:
+                self.left_right_velocity = int(self.v[0])
+                self.up_down_velocity = int(self.v[1])
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = np.rot90(frame)
