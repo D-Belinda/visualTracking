@@ -1,71 +1,79 @@
-from collections import deque
+import numpy as np
 
 FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
+Kx = np.array([1.0, 0.2, -5.0])  # P, I, D constants
+Ky = np.array([2.0, 0.4, -4.0])  # P, I, D constants
+Ksize = np.array([1, 1, 1])  # P, I, D constants
+
+MAX_SPEED = 100
+
+FADE_COEFFICIENT = 1 / 3
+
+
 class motion_controller:
-    class target:
-        def __init__(self):
-            self.x = self.y = self.size = self.dx = self.dy = self.dsize = None
-        def __int__(self, x, y, size, dx, dy, dsize):
-            self.x = x
-            self.y = y
-            self.size = size
-            self.dx = dx
-            self.dy = dy
-            self.dsize = dsize
 
-    def __init__(self, fps):
-        self.q = deque()  # a queue of circles
+    def __init__(self, fps, instruction_interval):
+        self.x = self.y = self.size = 0.0
+        self.dx = self.dy = self.dsize = 0.0
+        self.ix = self.iy = self.isize = 0.0
         self.FPS = fps
-        self.LOCATION_DELAY = 0.1  # use the average of the datas from the last 0.1 seconds to determine the location and size of the object
-        self.MOTION_DELAY = 0.2
-        self.MAX_QUEUE_LENGTH = 20
-        self.target = self.target()
+        self.DIST_TO_PIX = 1 / 12  # adjust based on distance, fix later
+        self.INSTRUCTION_INTERVAL = instruction_interval
+        self.I_MAX = 50 / self.DIST_TO_PIX / Kx[1]  # maximum value for ix
 
-    def add(self, circle):
+    def __update_params(self, x, y, size, dx, dy, dsize, ix, iy, isize):
+        self.x = x
+        self.y = y
+        self.size = size
+        self.dx = dx
+        self.dy = dy
+        self.dsize = dsize
+        self.ix = ix
+        self.iy = iy
+        self.isize = isize
+
+    def __update_params_tuple(self, xys, ixys, dxys):
+        self.x, self.y, self.size = tuple(xys)
+        self.dx, self.dy, self.dsize = tuple(dxys)
+        self.ix, self.iy, self.isize = tuple(ixys)
+
+    def add_location(self, circle):
         if len(circle) == 0:
-            self.q = deque()
-        else:
-            self.q.appendleft(circle)
-        while len(self.q) > self.MAX_QUEUE_LENGTH:
-            self.q.pop()
-
-    def __process(self):
-        n_frames = min(len(self.q), int(self.LOCATION_DELAY * self.FPS))
-        if n_frames == 0:
-            self.target = self.target()
             return
-        x, y, size = 0, 0, 0
-        for i in range(n_frames):
-            x += self.q[i][0]
-            y += self.q[i][1]
-            size += self.q[i][2]
-        x = x / n_frames
-        y = y / n_frames
-        size = size / n_frames
+        circle_np = np.array(circle)
+        xys = np.array([self.x, self.y, self.size])
+        dxys = np.array([self.dx, self.dy, self.dsize])
+        ixys = np.array([self.ix, self.iy, self.isize])
 
-        n_frames = min(len(self.q), int(self.MOTION_DELAY * self.FPS))
-        if n_frames == 0:
-            self.target = self.target()
-            return
-        dx = (self.q[len(self.q) - 1][0] - self.q[0][0]) / (len(self.q) / self.FPS)
-        dy = (self.q[len(self.q) - 1][1] - self.q[0][1]) / (len(self.q) / self.FPS)
-        dsize = (self.q[len(self.q) - 1][2] - self.q[0][2]) / (len(self.q) / self.FPS)
-        self.target = self.target(x, y, size, dx, dy, dsize)
+        if not self.x == self.y == self.size == 0.0:
+            dxys = np.add(dxys * FADE_COEFFICIENT, np.subtract(circle_np, xys) / self.FPS) / (1 + FADE_COEFFICIENT)
 
-    def instruct(self):
-        events = []
-        ret = self.target.x, self.target.y, self.target.size
-        if ret is None:
-            return events
-        x, y, size = ret
-        if x is None or y is None or size is None:
-            return events
-        mid_x_range = FRAME_WIDTH/3, FRAME_WIDTH*2/3
-        if x < mid_x_range[0]:
-            events.append("left")
-        elif x > mid_x_range[1]:
-            events.append("right")
-        # print(events)
-        return events
+        xys = np.add(FADE_COEFFICIENT * xys, circle_np) / (1 + FADE_COEFFICIENT)
+
+        ixys = np.add(ixys, circle_np / self.FPS)
+        ixys = np.clip(ixys, -self.I_MAX, self.I_MAX)
+
+        self.__update_params_tuple(xys, ixys, dxys)
+
+    def instruct(self, diagnostic=True):
+        dx_drone = float(np.sum(np.multiply(Kx, np.array([self.x, self.ix, self.dx]))))
+        dy_drone = float(np.sum(np.multiply(Ky, np.array([self.y, self.iy, self.dy]))))
+        dz_drone = float(np.sum(np.multiply(Ksize, np.array([self.size, self.isize, self.dsize]))))
+
+        if diagnostic:
+            print('PID', self.x, self.ix, self.dx)
+            print(list(np.multiply(Kx, np.array([self.x, self.ix, self.dx]))))
+        ret = np.array([dx_drone, -dy_drone, 0]) * self.DIST_TO_PIX * self.INSTRUCTION_INTERVAL
+        ret = np.clip(ret, -MAX_SPEED, MAX_SPEED)
+        return tuple(ret)
+
+    def get_obj_displacement(self):
+        return self.x, self.y, self.size
+
+    def get_obj_velocity(self):
+        return self.dx, self.dy, self.dsize
+
+    def get_obj_integral(self):
+        return self.ix, self.iy, self.isize

@@ -1,3 +1,5 @@
+from typing import BinaryIO
+
 import cv2
 import numpy as np
 
@@ -38,6 +40,7 @@ class hsv_setter:
         lower_range = np.array([l_h, l_s, l_v])
         upper_range = np.array([u_h, u_s, u_v])
         self.hsv = np.asarray([lower_range, upper_range])
+        np.save('hsv_value', self.hsv)
 
         return self.hsv
 

@@ -6,12 +6,15 @@ import time
 from object_tracking_class import object_tracker
 from hsv_class import hsv_setter
 from motion_control import motion_controller
+from data_logger import logger
 
 # Speed of the drone
-S = 100
+S = 10
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 FPS = 80
+INSTRUCTION_INTERVAL = 1
+instruction_counter = 0
 
 
 class FrontEnd(object):
@@ -34,7 +37,7 @@ class FrontEnd(object):
 
         # Create pygame window
         pygame.display.set_caption("Tello video stream")
-        self.screen = pygame.display.set_mode([int(960*0.9), int(720*0.9)])
+        self.screen = pygame.display.set_mode([int(960 * 0.9), int(720 * 0.9)])
 
         # Init Tello object that interacts with the Tello drone
         self.tello = Tello()
@@ -44,7 +47,8 @@ class FrontEnd(object):
         self.left_right_velocity = 0
         self.up_down_velocity = 0
         self.yaw_velocity = 0
-        self.speed = 10
+        self.v = 0.0, 0.0, 0.0  # yaw, up/down, forward/backward
+        self.speed = 10  # do not change this
 
         self.send_rc_control = False
 
@@ -53,17 +57,19 @@ class FrontEnd(object):
 
         self.ot = object_tracker()
         self.hsv_control = hsv_setter()
-        self.motion_controller = motion_controller(FPS)
+        self.motion_controller = motion_controller(FPS, INSTRUCTION_INTERVAL)
+        self.logger = logger()
 
     def run(self):
 
+        global instruction_counter
         self.tello.connect()
         self.tello.set_speed(self.speed)
 
         # In case streaming is on. This happens when we quit this program without the escape key.
         self.tello.streamoff()
         self.tello.streamon()
-
+        # self.tello.send_keepalive()
         frame_read = self.tello.get_frame_read()
 
         should_stop = False
@@ -74,7 +80,6 @@ class FrontEnd(object):
             self.screen.fill([0, 0, 0])
 
             frame = frame_read.frame
-            # frame = cv2.resize(frame, (int(frame.shape[1]*0.9), int(frame.shape[0]*0.9)), interpolation=cv2.INTER_AREA)
 
             self.hsv_control.display_preview(frame)
             hsv_values = self.hsv_control.get_hsv(frame)
@@ -98,15 +103,16 @@ class FrontEnd(object):
             flying_text = "In Flight: " + ("True" if self.tello.is_flying else "False")
             frame = cv2.putText(frame, flying_text, (5, 65), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-
             # display location of the target
-            if len(self.ot.get_circle()) != 0:
-                frame = cv2.putText(frame, "Tx={}  Ty={}".format(int(self.ot.get_circle()[0]), int(self.ot.get_circle()[1])), (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            circle = self.ot.get_circle()
+            if len(circle) != 0:
+                circle = (circle[0] - int(960 / 2), circle[1] - int(720 / 2), circle[2])
+                frame = cv2.putText(frame,
+                                    "Tx={}  Ty={}".format(int(circle[0]), int(circle[1])),
+                                    (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-            # update target location for motion controller
-            self.motion_controller.add(self.ot.get_circle())
+            self.motion_controller.add_location(circle)
 
-            # allow for key input while not in hand control
             for event in pygame.event.get():
                 if event.type == pygame.USEREVENT + 1:
                     self.update()
@@ -124,17 +130,18 @@ class FrontEnd(object):
                 elif event.type == pygame.KEYUP and (self.handControl or event.key == pygame.K_l):
                     self.keyup(event.key)
 
-            # receive instructions from motion_control
-            events = self.motion_controller.instruct()
-            # display events
-            frame = cv2.putText(frame, "events: " + str(events), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            if not self.handControl and self.tello.is_flying:
-                self.yaw_velocity = 0
-                for event in events:
-                    if event == "left":
-                        self.yaw_velocity = -S//3
-                    elif event == "right":
-                        self.yaw_velocity = S//3
+            #if instruction_counter == 0:
+                #print("here")
+                #self.v = self.motion_controller.instruct()
+                #instruction_counter = (instruction_counter + 1) % INSTRUCTION_INTERVAL
+            # display acceleration (x, y, forward/backward)
+            self.v = self.motion_controller.instruct()
+            instruction_counter = (instruction_counter + 1) % INSTRUCTION_INTERVAL
+            frame = cv2.putText(frame, "velocities: " + str((int(self.v[0]), int(self.v[1]))), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                (255, 255, 255), 2)
+            if self.tello.is_flying:
+                self.left_right_velocity = int(self.v[0])
+                self.up_down_velocity = int(self.v[1])
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = np.rot90(frame)
@@ -144,6 +151,15 @@ class FrontEnd(object):
             frame = pygame.surfarray.make_surface(frame)
             self.screen.blit(frame, (0, 0))
             pygame.display.update()
+
+            # logging data
+            # FIX: verify yaw displacement
+            # FIX: find ways to get forward/back displacement
+            '''self.logger.update_drone((self.tello.get_yaw(), self.tello.get_height(), 0),
+                                     (self.yaw_velocity, self.up_down_velocity, self.for_back_velocity))
+            self.logger.update_obj(self.motion_controller.get_obj_displacement(),
+                                   self.motion_controller.get_obj_velocity(),
+                                   self.motion_controller.get_obj_acceleration())'''
 
             time.sleep(1 / FPS)
 
