@@ -1,3 +1,8 @@
+'''
+PURPOSE: given the object's relative location in the x(horizontal), y(vertical), and z(distance), return the desired
+velocity of the drone in these three dimensions
+'''
+
 import numpy as np
 from math import radians, tan
 
@@ -12,10 +17,12 @@ FRAME_HEIGHT = 720
 Kx = np.array([1.0, 0.2, -5.0]) * 1  # P, I, D constants, 1/0 is on/off switch
 Ky = np.array([2.0, 0.4, -4.0]) * 1  # P, I, D constants
 Kz = np.array([1.0, 0.2, -5.0]) * 1  # P, I, D constants
+# side note: i dont remember why I made the Derivative constants negative... it makes more sense if it was positive
+# more experimentation needed with positive D constant
 
-MAX_SPEED = 100
+MAX_SPEED = 100  # max speed of the drone that will be assigned
 
-FADE_COEFFICIENT = 1 / 3
+FADE_COEFFICIENT = 1 / 3  # the previous frame is weighted 1/3 of the current
 
 
 class motion_controller:
@@ -25,9 +32,9 @@ class motion_controller:
         self.dx = self.dy = self.dz = 0.0
         self.ix = self.iy = self.iz = 0.0
         self.FPS = fps
-        self.DIST_TO_PIX = 1 / 12  # adjust based on distance, fix later
-        self.INSTRUCTION_INTERVAL = instruction_interval
-        self.I_MAX = 50 / self.DIST_TO_PIX / Kx[1]  # maximum value for ix
+        self.DIST_TO_PIX = 1 / 12  # the ratio between distance (cm) and the number of pixels
+        self.INSTRUCTION_INTERVAL = instruction_interval  # the interval of frames at which the class gives instructions
+        self.I_MAX = 50 / self.DIST_TO_PIX / Kx[1]  # maximum value for the integral component to prevent blow-ups
 
     def __update_params(self, x, y, z, dx, dy, dz, ix, iy, iz):
         self.x = x
@@ -48,27 +55,32 @@ class motion_controller:
     def add_location(self, circle):
         if len(circle) == 0:
             return
-        # angle = field of view in radian * proportion of the object on screen
+
+        # circle_np is the numpy array of the object's location in the current frame
         circle_np = np.array(circle)
         circle_np[0] = circle_np[0] - FRAME_WIDTH / 2
-        circle_np[1] = circle_np[1] - FRAME_HEIGHT / 3
+        circle_np[1] = circle_np[1] - FRAME_HEIGHT / 3  # set the vertical '0' to 1/3 from the top of the frame
         circle_np[2] = circle[2] * (cot(radians(82.6) * circle[2] / 960) - cot(radians(5)))
+        # angle is the field of view in radian * proportion of the object on screen
+        # the use of cotangent is explained more in the email I sent to Dr Fu in the beginning of the summer
 
+        # the xyz's are first set to the location of the object in the previous frame
         xyz = np.array([self.x, self.y, self.z])
         dxyz = np.array([self.dx, self.dy, self.dz])
         ixyz = np.array([self.ix, self.iy, self.iz])
 
+        # merges the locations from the previous frame with the current
         if not self.x == self.y == self.z == 0.0:
-            dxyz = np.add(dxyz * FADE_COEFFICIENT, np.subtract(circle_np, xyz) / self.FPS) \
-                       / (1 + FADE_COEFFICIENT)
+            dxyz = (FADE_COEFFICIENT*dxyz + (circle_np - xyz)/self.FPS) / (1+FADE_COEFFICIENT)
 
-        xyz = np.add(FADE_COEFFICIENT * xyz, circle_np) / (1 + FADE_COEFFICIENT)
+        xyz = (FADE_COEFFICIENT * xyz + circle_np) / (1 + FADE_COEFFICIENT)
 
         ixyz = np.add(ixyz, circle_np / self.FPS)
         ixyz = np.clip(ixyz, -self.I_MAX, self.I_MAX)
 
         self.__update_params_tuple(xyz, ixyz, dxyz)
 
+    # returns the desired speed in the form of a tuple (x, y, z)
     def instruct(self, diagnostic=False):
         dx_drone = float(np.sum(np.multiply(Kx, np.array([self.x, self.ix, self.dx]))))
         dy_drone = float(np.sum(np.multiply(Ky, np.array([self.y, self.iy, self.dy]))))
