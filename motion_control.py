@@ -1,7 +1,7 @@
-'''
+"""
 PURPOSE: given the object's relative location in the x(horizontal), y(vertical), and z(distance), return the desired
 velocity of the drone in these three dimensions
-'''
+"""
 
 import numpy as np
 from math import radians, tan
