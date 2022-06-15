@@ -10,14 +10,15 @@ import cv2
 import imutils
 import time
 
-class object_tracker:
+
+class ObjectTracker:
     def __init__(self):
         # construct the argument parse and parse the arguments
         self.ap = argparse.ArgumentParser()
         self.ap.add_argument("-v", "--video",
-                        help="path to the (optional) video file")
+                             help="path to the (optional) video file")
         self.ap.add_argument("-b", "--buffer", type=int, default=32,
-                        help="max buffer size")
+                             help="max buffer size")
         self.args = vars(self.ap.parse_args())
         # initialize the list of tracked points, the frame counter,
         # and the coordinate deltas

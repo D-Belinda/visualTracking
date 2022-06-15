@@ -25,7 +25,7 @@ MAX_SPEED = 100  # max speed of the drone that will be assigned
 FADE_COEFFICIENT = 1 / 3  # the previous frame is weighted 1/3 of the current
 
 
-class motion_controller:
+class MotionController:
 
     def __init__(self, fps, instruction_interval):
         self.x = self.y = self.z = 0.0
@@ -91,13 +91,22 @@ class motion_controller:
             print(list(np.multiply(Kz, np.array([self.z, self.iz, self.dz]))))
         ret = np.array([dx_drone, -dy_drone, dz_drone]) * self.DIST_TO_PIX * self.INSTRUCTION_INTERVAL
         ret = np.clip(ret, -MAX_SPEED, MAX_SPEED)
-        return tuple(ret)
+        return ret.astype('int')
 
     def get_obj_displacement(self):
-        return self.x, self.y, self.z
+        return np.array(self.x, self.y, self.z)
 
     def get_obj_velocity(self):
-        return self.dx, self.dy, self.dz
+        return np.array(self.dx, self.dy, self.dz)
 
     def get_obj_integral(self):
-        return self.ix, self.iy, self.iz
+        return np.array(self.ix, self.iy, self.iz)
+
+    def get_x_info(self):
+        return np.array(self.x, self.ix, self.dx)
+
+    def get_y_info(self):
+        return np.array(self.y, self.iy, self.dy)
+
+    def get_z_info(self):
+        return np.array(self.z, self.iz, self.dz)

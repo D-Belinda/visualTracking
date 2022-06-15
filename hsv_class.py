@@ -3,10 +3,14 @@ from typing import BinaryIO
 import cv2
 import numpy as np
 
+
 def nothing(x):
     pass
-class hsv_setter:
+
+
+class HsvSetter:
     hsv = np.asarray([])
+
     def __init__(self):
         self.hsv = np.load('hsv_value.npy')
         print(self.hsv)
@@ -66,4 +70,3 @@ class hsv_setter:
         if key == ord('h'):
             print("hsv_arr saved!")
             np.save('hsv_value', self.hsv)
-

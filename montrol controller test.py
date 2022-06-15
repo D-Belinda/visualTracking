@@ -1,6 +1,6 @@
 import motion_control
 import numpy as np
-ms = motion_control.motion_controller(60)
+ms = motion_control.MotionController(60)
 v = np.array([0,0,0])
 for i in range(0,50,1):
     ms.add_location((i,0,0))

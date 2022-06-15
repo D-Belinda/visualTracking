@@ -3,10 +3,10 @@ import cv2
 import pygame
 import numpy as np
 import time
-from object_tracking_class import object_tracker
-from hsv_class import hsv_setter
-from motion_control import motion_controller
-from data_logger import logger
+from object_tracking_class import ObjectTracker
+from hsv_class import HsvSetter
+from motion_control import MotionController
+from data_logger import Logger
 
 # Speed of the drone
 S = 10
@@ -55,10 +55,10 @@ class FrontEnd(object):
         # create update timer
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000 // FPS)
 
-        self.ot = object_tracker()
-        self.hsv_control = hsv_setter()
-        self.motion_controller = motion_controller(FPS, INSTRUCTION_INTERVAL)
-        self.logger = logger()
+        self.ot = ObjectTracker()
+        self.hsv_control = HsvSetter()
+        self.motion_controller = MotionController(FPS, INSTRUCTION_INTERVAL)
+        self.logger = Logger()
 
     def run(self):
 
@@ -124,23 +124,14 @@ class FrontEnd(object):
                 elif event.type == pygame.KEYUP and (self.handControl or event.key == pygame.K_l):
                     self.keyup(event.key)
 
-            #if instruction_counter == 0:
-                #print("here")
-                #self.v = self.motion_controller.instruct()
-                #instruction_counter = (instruction_counter + 1) % INSTRUCTION_INTERVAL
-
             # display acceleration (x, y, forward/backward)
             self.v = (np.array(self.motion_controller.instruct()).astype(int))
             displacements = tuple(np.array(self.motion_controller.get_obj_displacement()).astype(int))
-            frame = cv2.putText(frame,
-                                'displacements: ' + str(displacements),
-                                (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
             frame = cv2.putText(frame, "velocities: " + str(self.v), (5, 95), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                 (255, 255, 255), 2)
             if self.tello.is_flying:
-                self.left_right_velocity = int(self.v[0])
-                self.up_down_velocity = int(self.v[1])
-                self.for_back_velocity = int(self.v[2])
+                self.left_right_velocity, self.up_down_velocity, self.for_back_velocity = tuple(self.v)
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = np.rot90(frame)
@@ -152,13 +143,11 @@ class FrontEnd(object):
             pygame.display.update()
 
             # logging data
-            # FIX: verify yaw displacement
-            # FIX: find ways to get forward/back displacement
             '''self.logger.update_drone((self.tello.get_yaw(), self.tello.get_height(), 0),
-                                     (self.yaw_velocity, self.up_down_velocity, self.for_back_velocity))
-            self.logger.update_obj(self.motion_controller.get_obj_displacement(),
-                                   self.motion_controller.get_obj_velocity(),
-                                   self.motion_controller.get_obj_acceleration())'''
+                                     (self.yaw_velocity, self.up_down_velocity, self.for_back_velocity))'''
+            '''self.logger.update_obj(self.motion_controller.get_x_info(),
+                                   self.motion_controller.get_y_info(),
+                                   self.motion_controller.get_z_info())'''
 
             time.sleep(1 / FPS)
 
@@ -166,10 +155,6 @@ class FrontEnd(object):
         self.tello.end()
 
     def keydown(self, key):
-        """ Update velocities based on key pressed
-        Arguments:
-            key: pygame key
-        """
         if key == pygame.K_UP:  # set forward velocity
             self.for_back_velocity = S
         elif key == pygame.K_DOWN:  # set backward velocity
