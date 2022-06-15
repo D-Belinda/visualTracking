@@ -58,7 +58,7 @@ class FrontEnd(object):
         self.ot = ObjectTracker()
         self.hsv_control = HsvSetter()
         self.motion_controller = MotionController(FPS, INSTRUCTION_INTERVAL)
-        self.logger = Logger()
+        self.logger = Logger(obj_plot=False, drone_plot=False)
 
     def run(self):
 
@@ -143,11 +143,10 @@ class FrontEnd(object):
             pygame.display.update()
 
             # logging data
-            '''self.logger.update_drone((self.tello.get_yaw(), self.tello.get_height(), 0),
-                                     (self.yaw_velocity, self.up_down_velocity, self.for_back_velocity))'''
-            '''self.logger.update_obj(self.motion_controller.get_x_info(),
+            self.logger.update_drone(self.yaw_velocity, self.up_down_velocity, self.for_back_velocity)
+            self.logger.update_obj(self.motion_controller.get_x_info(),
                                    self.motion_controller.get_y_info(),
-                                   self.motion_controller.get_z_info())'''
+                                   self.motion_controller.get_z_info())
 
             time.sleep(1 / FPS)
 
