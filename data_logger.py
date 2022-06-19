@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-MAX_SIZE = 300
+
+MAX_SIZE = 100
 
 
 class Logger:
@@ -17,13 +18,13 @@ class Logger:
         num_cols = int(self.OBJ_PLOT) + int(self.DR_PLOT)
         if self.OBJ_PLOT:
             self.obj_x_plot = plt.subplot(3, num_cols, 1, title='obj x')
-            self.obj_y_plot = plt.subplot(3, num_cols, 2, title='obj y')
-            self.obj_z_plot = plt.subplot(3, num_cols, 3, title='obj z')
+            self.obj_y_plot = plt.subplot(3, num_cols, 1+num_cols, title='obj y')
+            self.obj_z_plot = plt.subplot(3, num_cols, 1+num_cols*2, title='obj z')
             self.update_obj_graph()
         if self.DR_PLOT:
-            self.drone_x_plot = plt.subplot(3, num_cols, 1 + 3 * int(self.OBJ_PLOT), title='drone x')
-            self.drone_y_plot = plt.subplot(3, num_cols, 2 + 3 * int(self.OBJ_PLOT), title='drone y')
-            self.drone_z_plot = plt.subplot(3, num_cols, 3 + 3 * int(self.OBJ_PLOT), title='drone z')
+            self.drone_x_plot = plt.subplot(3, num_cols, 1 * (1+int(self.OBJ_PLOT)), title='drone x')
+            self.drone_y_plot = plt.subplot(3, num_cols, 2 * (1+int(self.OBJ_PLOT)), title='drone y')
+            self.drone_z_plot = plt.subplot(3, num_cols, 3 * (1+int(self.OBJ_PLOT)), title='drone z')
             self.update_drone_graph()
 
     def update_drone(self, x, y, z):
@@ -47,16 +48,24 @@ class Logger:
             self.update_obj_graph()
 
     def update_drone_graph(self):
-        self.drone_x_plot(self.t, self.dr_x_info)
-        self.drone_y_plot(self.t, self.dr_y_info)
-        self.drone_z_plot(self.t, self.dr_z_info)
-        plt.draw()
+        if not self.DR_PLOT:
+            return
         self.drone_x_plot.clear()
         self.drone_y_plot.clear()
         self.drone_z_plot.clear()
+        self.drone_x_plot.plot(self.t, self.dr_x_info)
+        self.drone_y_plot.plot(self.t, self.dr_y_info)
+        self.drone_z_plot.plot(self.t, self.dr_z_info)
+        plt.draw()
+        plt.pause(0.001)
 
     def update_obj_graph(self):
+        if not self.OBJ_PLOT:
+            return
         xt, yt, zt = self.obj_x_info.T, self.obj_y_info.T, self.obj_z_info.T
+        self.obj_x_plot.clear()
+        self.obj_y_plot.clear()
+        self.obj_z_plot.clear()
         for i, mode in enumerate(['P', 'I', 'D']):
             self.obj_x_plot.plot(self.t, xt[i], label=mode)
             self.obj_y_plot.plot(self.t, yt[i], label=mode)
@@ -65,7 +74,4 @@ class Logger:
         self.obj_y_plot.legend()
         self.obj_z_plot.legend()
         plt.draw()
-        self.obj_x_plot.clear()
-        self.obj_y_plot.clear()
-        self.obj_z_plot.clear()
-
+        plt.pause(0.001)

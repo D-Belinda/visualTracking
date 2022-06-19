@@ -3,17 +3,12 @@ import cv2
 import pygame
 import numpy as np
 import time
-from object_tracking_class import ObjectTracker
-from hsv_class import HsvSetter
-from motion_control import MotionController
-from data_logger import Logger
 
 # Speed of the drone
 S = 10
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
-FPS = 30
-LOG = False
+FPS = 40
 
 
 class FrontEnd(object):
@@ -45,89 +40,61 @@ class FrontEnd(object):
         self.speed = 10  # do not change this
 
         self.send_rc_control = False
+        self.recording = True
 
         # create update timer
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000 // FPS)
 
-        self.ot = ObjectTracker()
-        self.hsv_control = HsvSetter()
-        self.motion_controller = MotionController(FPS)
-        if LOG:
-            self.logger = Logger(obj_plot=True, drone_plot=True)
-
     def process_frame(self, frame):
-        # Displaying battery
-        battery_text = "Battery: {}%".format(self.tello.get_battery())
-        frame = cv2.putText(frame, battery_text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        frame = cv2.putText(frame, "velocities: " + str(self.v), (5, 45), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                            (255, 255, 255), 2)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = np.rot90(frame)
         frame = np.flipud(frame)
-
         frame = cv2.resize(frame, (int(frame.shape[1] * 0.9), int(frame.shape[0] * 0.9)))
-        frame = pygame.surfarray.make_surface(frame)
         return frame
 
     def run(self):
-        global instruction_counter
+        img_counter = 1
+
         self.tello.connect()
         self.tello.set_speed(self.speed)
 
         # In case streaming is on. This happens when we quit this program without the escape key.
         self.tello.streamoff()
         self.tello.streamon()
-        # self.tello.send_keepalive()
+        self.tello.send_keepalive()
         frame_read = self.tello.get_frame_read()
 
-        should_stop = False
-        while not should_stop:
+        while True:
             if frame_read.stopped:
                 break
 
             for event in pygame.event.get():
                 if event.type == pygame.USEREVENT + 1:
                     self.update()
-                elif event.type == pygame.QUIT:
+                elif event.type == pygame.QUIT or event.key == pygame.K_SPACE:
                     break
-                elif event.type == pygame.KEYUP:
-                    if event.key == pygame.K_RETURN:
-                        self.tello.takeoff()
-                        self.send_rc_control = True
-                    elif event.key == pygame.K_SPACE:
-                        should_stop = True
+                elif event.key == pygame.K_RETURN:
+                    self.tello.takeoff()
+                    self.send_rc_control = True
+                elif event.key == pygame.K_r:
+                    self.recording = not self.recording
 
             self.screen.fill([0, 0, 0])
 
             frame = frame_read.frame
-
-            self.hsv_control.display_preview(frame)
-            hsv_values = self.hsv_control.get_hsv(frame)
-            frame = self.ot.process_all(frame, hsv_values)
-
-            circle = self.ot.get_circle()
-            self.motion_controller.add_location(circle)
-            self.v = self.motion_controller.instruct(True)
-
-            if self.tello.is_flying:
-                self.v = list(map(int, self.v))
-                self.left_right_velocity, self.up_down_velocity, self.for_back_velocity = self.v
-
-            # logging data
-            if LOG:
-                self.logger.update_drone(self.yaw_velocity,
-                                         self.up_down_velocity,
-                                         self.for_back_velocity)
-                self.logger.update_obj(self.motion_controller.get_x_info(),
-                                       self.motion_controller.get_y_info(),
-                                       self.motion_controller.get_z_info())
-
             frame = self.process_frame(frame)
+            if self.recording:
+                cv2.imwrite(frame, 'img/' + str(img_counter) + '.jpg')
+                img_counter += 1
+            gen_text = "Generating: {}%".format(self.recording)
+            frame = cv2.putText(frame, gen_text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            frame = pygame.surfarray.make_surface(frame)
             self.screen.blit(frame, (0, 0))
             pygame.display.update()
 
             time.sleep(1 / FPS)
 
+        # Call it always before finishing. To deallocate resources.
         self.tello.land()
         self.send_rc_control = False
         self.tello.end()
