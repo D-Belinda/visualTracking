@@ -106,10 +106,10 @@ class FrontEnd(object):
             frame = self.ot.process_all(frame, hsv_values)
 
             circle = self.ot.get_circle()
-            self.motion_controller.add_location(circle)
-            self.v = self.motion_controller.instruct(True)
 
             if self.tello.is_flying:
+                self.motion_controller.add_location(circle)
+                self.v = self.motion_controller.instruct(diagnostic=False)
                 self.v = list(map(int, self.v))
                 self.left_right_velocity, self.up_down_velocity, self.for_back_velocity = self.v
 

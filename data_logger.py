@@ -17,14 +17,20 @@ class Logger:
 
         num_cols = int(self.OBJ_PLOT) + int(self.DR_PLOT)
         if self.OBJ_PLOT:
-            self.obj_x_plot = plt.subplot(3, num_cols, 1, title='obj x')
-            self.obj_y_plot = plt.subplot(3, num_cols, 1+num_cols, title='obj y')
-            self.obj_z_plot = plt.subplot(3, num_cols, 1+num_cols*2, title='obj z')
+            self.obj_x_plot = plt.subplot(3, num_cols, 1)
+            self.obj_y_plot = plt.subplot(3, num_cols, 1+num_cols)
+            self.obj_z_plot = plt.subplot(3, num_cols, 1+num_cols*2)
+            self.obj_x_plot.set_title('OBJ X')
+            self.obj_y_plot.set_title('OBJ Y')
+            self.obj_z_plot.set_title('OBJ Z')
             self.update_obj_graph()
         if self.DR_PLOT:
-            self.drone_x_plot = plt.subplot(3, num_cols, 1 * (1+int(self.OBJ_PLOT)), title='drone x')
-            self.drone_y_plot = plt.subplot(3, num_cols, 2 * (1+int(self.OBJ_PLOT)), title='drone y')
-            self.drone_z_plot = plt.subplot(3, num_cols, 3 * (1+int(self.OBJ_PLOT)), title='drone z')
+            self.drone_x_plot = plt.subplot(3, num_cols, 1 * (1+int(self.OBJ_PLOT)))
+            self.drone_y_plot = plt.subplot(3, num_cols, 2 * (1+int(self.OBJ_PLOT)))
+            self.drone_z_plot = plt.subplot(3, num_cols, 3 * (1+int(self.OBJ_PLOT)))
+            self.drone_x_plot.set_title('DRONE X')
+            self.drone_y_plot.set_title('DRONE Y')
+            self.drone_z_plot.set_title('DRONE Z')
             self.update_drone_graph()
 
     def update_drone(self, x, y, z):
