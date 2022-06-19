@@ -9,6 +9,8 @@ S = 10
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 FPS = 40
+INTVERVAL = 5  # take a pic every 5 frames
+interval_counter = 0
 
 
 class FrontEnd(object):
@@ -53,6 +55,7 @@ class FrontEnd(object):
         return frame
 
     def run(self):
+        global INTVERVAL, interval_counter
         img_counter = 1
 
         self.tello.connect()
@@ -83,9 +86,12 @@ class FrontEnd(object):
 
             frame = frame_read.frame
             frame = self.process_frame(frame)
-            if self.recording:
+            interval_counter += 1
+            if self.recording and INTVERVAL == interval_counter:
                 cv2.imwrite(frame, 'img/' + str(img_counter) + '.jpg')
                 img_counter += 1
+                interval_counter = 0
+
             gen_text = "Generating: {}%".format(self.recording)
             frame = cv2.putText(frame, gen_text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             frame = pygame.surfarray.make_surface(frame)
