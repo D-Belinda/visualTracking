@@ -27,7 +27,7 @@ FADE_COEFFICIENT = 1 / 3  # the previous frame is weighted 1/3 of the current
 
 class MotionController:
 
-    def __init__(self, fps, instruction_interval):
+    def __init__(self, fps):
         self.x = self.y = self.z = 0.0
         self.dx = self.dy = self.dz = 0.0
         self.ix = self.iy = self.iz = 0.0
