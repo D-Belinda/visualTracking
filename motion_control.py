@@ -27,7 +27,7 @@ FADE_COEFFICIENT = 1 / 3  # the previous frame is weighted 1/3 of the current
 
 class MotionController:
 
-    def __init__(self, fps, instruction_interval):
+    def __init__(self, fps):
         self.x = self.y = self.z = 0.0
         self.dx = self.dy = self.dz = 0.0
         self.ix = self.iy = self.iz = 0.0
@@ -51,15 +51,15 @@ class MotionController:
         self.dx, self.dy, self.dz = tuple(dxyz)
         self.ix, self.iy, self.iz = tuple(ixyz)
 
-    def add_location(self, circle):
-        if len(circle) == 0:
+    def add_location(self, rect):
+        if rect is None or len(rect) == 0:
             return
 
-        # circle_np is the numpy array of the object's location in the current frame
-        circle_np = np.array(circle)
-        circle_np[0] = circle_np[0] - FRAME_WIDTH / 2
-        circle_np[1] = circle_np[1] - FRAME_HEIGHT / 2
-        circle_np[2] = circle[2] * (cot(radians(82.6) * circle[2] / 960) - cot(radians(5)))
+        # rect_np is the numpy array of the object's location in the current frame
+        rect_np = np.array(rect)
+        rect_np[0] = rect_np[0] - FRAME_WIDTH / 2
+        rect_np[1] = rect_np[1] - FRAME_HEIGHT / 2
+        rect_np[2] = rect_np[2] * (cot(radians(82.6) * rect_np[2] / 960) - cot(radians(5)))
         # angle is the field of view in radian * proportion of the object on screen
         # the use of cotangent is explained more in the email I sent to Dr Fu in the beginning of the summer
 
@@ -70,11 +70,11 @@ class MotionController:
 
         # merges the locations from the previous frame with the current
         if not self.x == self.y == self.z == 0.0:
-            dxyz = (FADE_COEFFICIENT*dxyz + (circle_np - xyz)*self.FPS) / (1+FADE_COEFFICIENT)
+            dxyz = (FADE_COEFFICIENT*dxyz + (rect_np - xyz)*self.FPS) / (1+FADE_COEFFICIENT)
 
-        xyz = (FADE_COEFFICIENT * xyz + circle_np) / (1 + FADE_COEFFICIENT)
+        xyz = (FADE_COEFFICIENT * xyz + rect_np) / (1 + FADE_COEFFICIENT)
 
-        ixyz = np.add(ixyz, circle_np / self.FPS)
+        ixyz = np.add(ixyz, rect_np / self.FPS)
         ixyz = np.clip(ixyz, -self.I_MAX, self.I_MAX)
 
         self.__update_params_tuple(xyz, ixyz, dxyz)

@@ -37,10 +37,10 @@ class FrontEnd(object):
         self.tello = Tello()
 
         # Drone velocities between -100~100
-        self.for_back_velocity = 0
-        self.left_right_velocity = 0
-        self.up_down_velocity = 0
-        self.yaw_velocity = 0
+        self.vz = 0
+        self.vx = 0
+        self.vy = 0
+        self.vyaw = 0
         self.v = 0.0, 0.0, 0.0  # yaw, up/down, forward/backward
         self.speed = 10  # do not change this
 
@@ -50,10 +50,9 @@ class FrontEnd(object):
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000 // FPS)
 
         self.ot = ObjectTracker()
-        self.hsv_control = HsvSetter()
         self.motion_controller = MotionController(FPS)
         if LOG:
-            self.logger = Logger(obj_plot=True, drone_plot=True)
+            self.logger = Logger(obj_plot=False, drone_plot=False)
 
     def process_frame(self, frame):
         # Displaying battery
@@ -101,23 +100,19 @@ class FrontEnd(object):
 
             frame = frame_read.frame
 
-            self.hsv_control.display_preview(frame)
-            hsv_values = self.hsv_control.get_hsv(frame)
-            frame = self.ot.process_all(frame, hsv_values)
-
-            circle = self.ot.get_circle()
+            frame, rect = self.ot.get_rect(frame)
 
             if self.tello.is_flying:
-                self.motion_controller.add_location(circle)
+                self.motion_controller.add_location(rect)
                 self.v = self.motion_controller.instruct(diagnostic=False)
                 self.v = list(map(int, self.v))
-                self.left_right_velocity, self.up_down_velocity, self.for_back_velocity = self.v
+                self.vx, self.vy, self.vz = self.v
 
             # logging data
             if LOG:
-                self.logger.update_drone(self.yaw_velocity,
-                                         self.up_down_velocity,
-                                         self.for_back_velocity)
+                self.logger.update_drone(np.array([self.vx, self.tello.get_speed_x()]),
+                                         np.array([self.vy, self.tello.get_speed_y()]),
+                                         np.array([self.vz, self.tello.get_speed_z()]))
                 self.logger.update_obj(self.motion_controller.get_x_info(),
                                        self.motion_controller.get_y_info(),
                                        self.motion_controller.get_z_info())
@@ -135,8 +130,8 @@ class FrontEnd(object):
     def update(self):
         if not self.send_rc_control:
             return
-        self.tello.send_rc_control(self.left_right_velocity, self.for_back_velocity,
-                                   self.up_down_velocity, self.yaw_velocity)
+        self.tello.send_rc_control(self.vx, self.vz,
+                                   self.vy, self.vyaw)
 
 
 def main():
