@@ -5,6 +5,12 @@ import numpy as np
 import time
 import os
 
+"""
+To use this file:
+Do not need to takeoff the drone. Keep the card in the drone's field of view, then press 'R' to make it take a picture 
+every 5 frames. To stop recording, press 'r' again
+"""
+
 # Speed of the drone
 S = 10
 # Frames per second of the pygame window display
