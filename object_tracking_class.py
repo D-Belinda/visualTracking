@@ -16,7 +16,7 @@ class ObjectTracker:
     def __init__(self):
         # construct the argument parse and parse the arguments
         self.device = select_device('')
-        model = DetectMultiBackend('yolov5n.pt', device=self.device, dnn=False, data=None, fp16=False)
+        model = DetectMultiBackend('bs128ep70.pt', device=self.device, dnn=False, data=None, fp16=False)
         self.stride, self.names, pt = model.stride, model.names, model.pt
         self.imgsz = check_img_size((960, 720), s=self.stride)
 
@@ -38,7 +38,7 @@ class ObjectTracker:
 
         pred = self.model(img)
 
-        pred = non_max_suppression(pred, conf_thres=0.25, iou_thres=0.45, classes=None, max_det=10)
+        pred = non_max_suppression(pred, conf_thres=0.5, iou_thres=0.45, classes=None, max_det=10)
 
         det = pred[0]
         im0 = frame.copy()
@@ -55,7 +55,7 @@ class ObjectTracker:
             c = int(cls)  # integer class
             label = f'{self.names[c]} {conf:.2f}'
             annotator.box_label(xyxy, label, color=colors(c, True))
-            rect = xywh[0], xywh[1], np.sqrt(xywh[2] * xywh[3])
+            rect = xywh[0], xywh[1], np.sqrt(xywh[2] * xywh[3] / np.pi)
 
         frame = annotator.result()
         return frame, rect
