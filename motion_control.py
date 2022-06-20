@@ -14,9 +14,9 @@ def cot(x):
 FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
-Kx = np.array([1.0, 0.5, 0.3]) * 1  # P, I, D constants, 1/0 is on/off switch
-Ky = np.array([2.0, 0.5, 0.3]) * 1  # P, I, D constants
-Kz = np.array([1.0, 0.5, 0.3]) * 1  # P, I, D constants
+Kx = np.array([1.0, 0.5, 0.25]) * 1  # P, I, D constants, 1/0 is on/off switch
+Ky = np.array([2.0, 0.5, 0.25]) * 1  # P, I, D constants
+Kz = np.array([1.0, 0.5, 0.2]) * 1  # P, I, D constants
 # side note: i dont remember why I made the Derivative constants negative... it makes more sense if it was positive
 # more experimentation needed with positive D constant
 
@@ -26,6 +26,10 @@ FADE_COEFFICIENT = 1 / 3  # the previous frame is weighted 1/3 of the current
 
 
 class MotionController:
+    def clear_data(self):
+        self.x = self.y = self.z = 0.0
+        self.dx = self.dy = self.dz = 0.0
+        self.ix = self.iy = self.iz = 0.0
 
     def __init__(self, fps):
         self.x = self.y = self.z = 0.0

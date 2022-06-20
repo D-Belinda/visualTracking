@@ -92,6 +92,7 @@ class FrontEnd(object):
                 elif event.type == pygame.KEYUP:
                     if event.key == pygame.K_RETURN:
                         self.tello.takeoff()
+                        self.motion_controller.clear_data()
                         self.send_rc_control = True
                     elif event.key == pygame.K_SPACE:
                         should_stop = True
@@ -102,9 +103,10 @@ class FrontEnd(object):
 
             frame, rect = self.ot.get_rect(frame)
 
+            self.motion_controller.add_location(rect)
+            self.v = self.motion_controller.instruct(diagnostic=False)
+
             if self.tello.is_flying:
-                self.motion_controller.add_location(rect)
-                self.v = self.motion_controller.instruct(diagnostic=False)
                 self.v = list(map(int, self.v))
                 self.vx, self.vy, self.vz = self.v
 

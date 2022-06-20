@@ -51,11 +51,11 @@ class ObjectTracker:
             det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
             *xyxy, conf, cls = det[0]
-            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
             c = int(cls)  # integer class
             label = f'{self.names[c]} {conf:.2f}'
             annotator.box_label(xyxy, label, color=colors(c, True))
-            rect = xywh[0], xywh[1], np.sqrt(xywh[2] * xywh[3] / np.pi)
+            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4))).view(-1).tolist()
+            rect = xywh[0], xywh[1], np.sqrt(xywh[2]**2 + xywh[3]**2) / 2
 
         frame = annotator.result()
         return frame, rect

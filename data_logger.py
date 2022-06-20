@@ -8,7 +8,7 @@ class Logger:
     def __init__(self, obj_plot=True, drone_plot=True):
         tmp = np.zeros((MAX_SIZE, 3))
         self.obj_x_info, self.obj_y_info, self.obj_z_info = tmp.copy(), tmp.copy(), tmp.copy()
-        tmp = np.zeros(MAX_SIZE)
+        tmp = np.zeros((MAX_SIZE,2))
         self.dr_x_info, self.dr_y_info, self.dr_z_info = tmp.copy(), tmp.copy(), tmp.copy()
         self.t = np.linspace(-MAX_SIZE, 0, num=MAX_SIZE, endpoint=False)
 
