@@ -3,12 +3,21 @@ import cv2
 import pygame
 import numpy as np
 import time
+import os
+
+"""
+To use this file:
+Do not need to takeoff the drone. Keep the card in the drone's field of view, then press 'R' to make it take a picture 
+every 5 frames. To stop recording, press 'r' again
+"""
 
 # Speed of the drone
 S = 10
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 FPS = 40
+INTVERVAL = 15  # take a pic every 5 frames
+interval_counter = 0
 
 
 class FrontEnd(object):
@@ -40,20 +49,15 @@ class FrontEnd(object):
         self.speed = 10  # do not change this
 
         self.send_rc_control = False
-        self.recording = True
+        self.recording = False
 
         # create update timer
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000 // FPS)
 
-    def process_frame(self, frame):
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame = np.rot90(frame)
-        frame = np.flipud(frame)
-        frame = cv2.resize(frame, (int(frame.shape[1] * 0.9), int(frame.shape[0] * 0.9)))
-        return frame
-
     def run(self):
-        img_counter = 1
+        global INTVERVAL, interval_counter
+        img_counter = max([int(e.split('.')[0]) for e in os.listdir('img') if 'jpg' in e])
+        print(img_counter)
 
         self.tello.connect()
         self.tello.set_speed(self.speed)
@@ -61,33 +65,45 @@ class FrontEnd(object):
         # In case streaming is on. This happens when we quit this program without the escape key.
         self.tello.streamoff()
         self.tello.streamon()
-        self.tello.send_keepalive()
+        # self.tello.send_keepalive()
         frame_read = self.tello.get_frame_read()
 
-        while True:
+        should_stop = False
+        while not should_stop:
             if frame_read.stopped:
                 break
-
             for event in pygame.event.get():
                 if event.type == pygame.USEREVENT + 1:
                     self.update()
-                elif event.type == pygame.QUIT or event.key == pygame.K_SPACE:
+                elif event.type == pygame.QUIT:
                     break
-                elif event.key == pygame.K_RETURN:
-                    self.tello.takeoff()
-                    self.send_rc_control = True
-                elif event.key == pygame.K_r:
-                    self.recording = not self.recording
+                elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_RETURN:
+                        self.tello.takeoff()
+                        self.send_rc_control = True
+                    elif event.key == pygame.K_SPACE:
+                        should_stop = True
+                    elif event.key == pygame.K_r:
+                        self.recording = not self.recording
 
             self.screen.fill([0, 0, 0])
 
             frame = frame_read.frame
-            frame = self.process_frame(frame)
-            if self.recording:
-                cv2.imwrite(frame, 'img/' + str(img_counter) + '.jpg')
+
+            interval_counter += 1
+            if INTVERVAL == interval_counter:
+                if self.recording:
+                    print(f'img{img_counter} status:{cv2.imwrite(f"img/{str(img_counter)}.jpg", frame)}')
                 img_counter += 1
-            gen_text = "Generating: {}%".format(self.recording)
+                interval_counter = 0
+
+            gen_text = f"Generating: {self.recording}  {self.tello.get_battery()}"
             frame = cv2.putText(frame, gen_text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = np.rot90(frame)
+            frame = np.flipud(frame)
+            frame = cv2.resize(frame, (int(frame.shape[1] * 0.9), int(frame.shape[0] * 0.9)))
+
             frame = pygame.surfarray.make_surface(frame)
             self.screen.blit(frame, (0, 0))
             pygame.display.update()
