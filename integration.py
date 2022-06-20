@@ -53,7 +53,7 @@ class FrontEnd(object):
         self.hsv_control = HsvSetter()
         self.motion_controller = MotionController(FPS)
         if LOG:
-            self.logger = Logger(obj_plot=True, drone_plot=True)
+            self.logger = Logger(obj_plot=False, drone_plot=False)    # Set to True if want plot
 
     def process_frame(self, frame):
         # Displaying battery

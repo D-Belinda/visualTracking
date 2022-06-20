@@ -15,12 +15,19 @@ FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
 Kx = np.array([1.0, 0.5, 0.3]) * 1  # P, I, D constants, 1/0 is on/off switch
-Ky = np.array([2.0, 0.5, 0.3]) * 1  # P, I, D constants
-Kz = np.array([1.0, 0.5, 0.3]) * 1  # P, I, D constants
+Ky = np.array([2.0, 0.5, 0.3]) * 0  # P, I, D constants
+Kz = np.array([1.0, 0.5, 0.3]) * 0  # P, I, D constants
 # side note: i dont remember why I made the Derivative constants negative... it makes more sense if it was positive
 # more experimentation needed with positive D constant
+''' 
+Previous constants:
+    kx = [1.0, 0.5, 0.3]
+    ky = [2.0, 0.5, 0.3]
+    kz = [1.0, 0.5, 0.3]
+'''
 
-MAX_SPEED = 100  # max speed of the drone that will be assigned
+
+MAX_SPEED = 50  # max speed of the drone that will be assigned
 
 FADE_COEFFICIENT = 1 / 3  # the previous frame is weighted 1/3 of the current
 
