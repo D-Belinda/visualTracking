@@ -1,3 +1,4 @@
+from tkinter import *  # don't delete this (necessary for matplotlib)
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -8,7 +9,7 @@ class Logger:
     def __init__(self, obj_plot=True, drone_plot=True):
         tmp = np.zeros((MAX_SIZE, 3))
         self.obj_x_info, self.obj_y_info, self.obj_z_info = tmp.copy(), tmp.copy(), tmp.copy()
-        tmp = np.zeros(MAX_SIZE)
+        tmp = np.zeros((MAX_SIZE, 2))
         self.dr_x_info, self.dr_y_info, self.dr_z_info = tmp.copy(), tmp.copy(), tmp.copy()
         self.t = np.linspace(-MAX_SIZE, 0, num=MAX_SIZE, endpoint=False)
 
@@ -56,12 +57,17 @@ class Logger:
     def update_drone_graph(self):
         if not self.DR_PLOT:
             return
+        xt, yt, zt = self.dr_x_info.T, self.dr_y_info.T, self.dr_z_info.T
         self.drone_x_plot.clear()
         self.drone_y_plot.clear()
         self.drone_z_plot.clear()
-        self.drone_x_plot.plot(self.t, self.dr_x_info)
-        self.drone_y_plot.plot(self.t, self.dr_y_info)
-        self.drone_z_plot.plot(self.t, self.dr_z_info)
+        for i, mode in enumerate(['desired', 'actual']):
+            self.drone_x_plot.plot(self.t, xt[i], label=mode)
+            self.drone_y_plot.plot(self.t, yt[i], label=mode)
+            self.drone_z_plot.plot(self.t, zt[i], label=mode)
+        self.drone_x_plot.legend()
+        self.drone_y_plot.legend()
+        self.drone_z_plot.legend()
         plt.draw()
         plt.pause(0.001)
 
