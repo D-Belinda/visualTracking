@@ -14,7 +14,7 @@ def cot(x):
 FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
-Kx = np.array([1.0, 0.5, 0.25]) * 1  # P, I, D constants, 1/0 is on/off switch
+Kx = np.array([0.7, 0.5, 0.20]) * 1  # P, I, D constants, 1/0 is on/off switch
 Ky = np.array([2.0, 0.5, 0.25]) * 1  # P, I, D constants
 Kz = np.array([1.0, 0.5, 0.2]) * 1  # P, I, D constants
 # side note: i dont remember why I made the Derivative constants negative... it makes more sense if it was positive
