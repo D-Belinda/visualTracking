@@ -2,6 +2,8 @@
 
 # visualTracking
 Autonomously identify an object and track it using the DJI Tello drone
+* [RC Car Build Instructions](https://racecarj.com/pages/build-instructions)
+* [DJI Tellopy Documentation](https://djitellopy.readthedocs.io/en/latest/tello/)
 
 # Object Detection
 * HSV colorspace & opencv
