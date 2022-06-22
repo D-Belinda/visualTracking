@@ -1,8 +1,5 @@
 import numpy as np
-import cv2
-import imutils
 import time
-from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
 from utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
                            increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
@@ -11,12 +8,16 @@ from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterb
 from models.common import DetectMultiBackend
 import torch
 
+MODEL_DIR = 'Ssz600bs32acc814.pt'
+
 
 class ObjectTracker:
+    global MODEL_DIR
+
     def __init__(self):
         # construct the argument parse and parse the arguments
         self.device = select_device('')
-        model = DetectMultiBackend('bs128ep70.pt', device=self.device, dnn=False, data=None, fp16=False)
+        model = DetectMultiBackend(MODEL_DIR, device=self.device, dnn=False, data=None, fp16=False)
         self.stride, self.names, pt = model.stride, model.names, model.pt
         self.imgsz = check_img_size((960, 720), s=self.stride)
 
@@ -27,6 +28,7 @@ class ObjectTracker:
         self.rect = ()
 
     def get_rect(self, frame):
+        t1 = time.time()
         img = letterbox(frame, self.imgsz, stride=self.stride)[0]
         img = img.transpose((2, 0, 1))[::-1]
         img = np.ascontiguousarray(img)
@@ -37,8 +39,7 @@ class ObjectTracker:
             img = img[None]
 
         pred = self.model(img)
-
-        pred = non_max_suppression(pred, conf_thres=0.5, iou_thres=0.45, classes=None, max_det=10)
+        pred = non_max_suppression(pred, conf_thres=0.5, iou_thres=0.45, classes=None, max_det=1)
 
         det = pred[0]
         im0 = frame.copy()
@@ -55,7 +56,11 @@ class ObjectTracker:
             label = f'{self.names[c]} {conf:.2f}'
             annotator.box_label(xyxy, label, color=colors(c, True))
             xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4))).view(-1).tolist()
-            rect = xywh[0], xywh[1], np.sqrt(xywh[2]**2 + xywh[3]**2) / 2
+            rect = xywh[0], xywh[1], np.sqrt(xywh[2] ** 2 + xywh[3] ** 2) / 2
 
         frame = annotator.result()
+
+        t2 = time.time()
+        print(f'{MODEL_DIR}: {1 / (t2 - t1)}fps')
+
         return frame, rect
