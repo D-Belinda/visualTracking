@@ -12,13 +12,14 @@ Autonomously identify an object and track it using the DJI Tello drone
 
 * YOLOv5n
   * Bounding box v. circle affects stability of the control portion
-  * Model trained for the green notecard
+  * Model trained for the green notecard, PID constants tuned
+  * Model in training for the RC car
 
 ## To-Do
 - [ ] Retune PID constants to account for YOLO identification
 - [ ] Perfect identification + tracking with the green notecard 
-- [ ] Gather dataset for RC car (front/left/right/back/top views)
-- [ ] Annotate dataset for RC car
+- [x] Gather dataset for RC car (front/left/right/back/top views)
+- [x] Annotate dataset for RC car
 - [ ] Train model for RC car
 - [ ] Retune PID constants for RC car
 
