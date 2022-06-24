@@ -30,6 +30,7 @@ Autonomously identify an object and track it using the DJI Tello drone
 
 ## To-Do
 - [ ] Map distance to pixel relationship
+ - [ ] Use pandas
 - [ ] Log error graphs to help with PID tuning
 - [ ] Test performance for sudden movements and edge cases
 - [ ] Measure wireless communication delay, see if it is affection the motion delay
