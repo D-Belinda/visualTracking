@@ -8,7 +8,7 @@ from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterb
 from models.common import DetectMultiBackend
 import torch
 
-MODEL_DIR = 'Ssz600bs32acc814.pt'
+MODEL_DIR = 'Nsz600bs64.pt'
 
 
 class ObjectTracker:
