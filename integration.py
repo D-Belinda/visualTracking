@@ -60,7 +60,6 @@ class FrontEnd(object):
         frame = cv2.putText(frame, battery_text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         frame = cv2.putText(frame, "velocities: " + str(self.v), (5, 45), cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (255, 255, 255), 2)
-        # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Commented out to color correct
         frame = np.rot90(frame)
         frame = np.flipud(frame)
 
@@ -100,7 +99,7 @@ class FrontEnd(object):
             self.screen.fill([0, 0, 0])
 
             frame = frame_read.frame
-
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Commented out to color correct
             frame, rect = self.ot.get_rect(frame)
 
             self.motion_controller.add_location(rect)
