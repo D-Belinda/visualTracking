@@ -14,21 +14,24 @@ def cot(x):
 FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
-Kx = np.array([0.7, 0.5, 0.20]) * 0  # P, I, D constants, 1/0 is on/off switch
-Ky = np.array([2.0, 0.5, 0.25]) * 1
-Kz = np.array([1.0, 0.5, 0.2]) * 1
-Kr = np.array([0.25, 0.1, 0.05]) * 1
+Kx = np.array([0.7, 0.05, 0.23]) * 1  # P, I, D constants, 1/0 is on/off switch
+Ky = np.array([2.0, 0.05, 0.25]) * 0
+Kz = np.array([1.0, 0.05, 0.2]) * 0
+Kr = np.array([0.5, 0.05, 0.05]) * 1.2
 
 MAX_SPEED = 70  # max speed of the drone that will be assigned
 
 FADE_COEFFICIENT = 1 / 3  # the previous frame is weighted 1/3 of the current
 
+TRACK_DIST = 30  # in cm
+ITEM_SIZE = 7
+
 
 class MotionController:
     def clear_data(self):
-        self.x = self.y = self.z, self.r = 0.0
-        self.dx = self.dy = self.dz, self.dr = 0.0
-        self.ix = self.iy = self.iz, self.ir = 0.0
+        self.x = self.y = self.z = self.r = 0.0
+        self.dx = self.dy = self.dz = self.dr = 0.0
+        self.ix = self.iy = self.iz = self.ir = 0.0
 
     def __init__(self, fps):
         self.max_WoverH = 1
@@ -67,10 +70,10 @@ class MotionController:
         # angle is the field of view in radian * proportion of the object on screen
         # the use of cotangent is explained more in the email I sent to Dr Fu in the beginning of the summer
         rect[2] = wh[1] / np.sqrt(3)
-        rect[2] *= cot(math.radians(82.6) * rect[2] / 960) - cot(math.radians(10))
+        rect[2] *= cot(math.radians(82.6) * rect[2] / 960) - cot(math.radians(7))
         # calculate angle of rotation
         tilt_dir = rect[3]
-        angle = tilt_dir * math.degrees(np.arccos((wh[0]/wh[1]) / 1.45))
+        angle = tilt_dir * math.degrees(np.arccos((wh[0]/wh[1]) / 1.43))
         angle = 0 if math.isnan(angle) else angle
         rect[3] = angle
         print(wh, tilt_dir, angle)
@@ -106,7 +109,7 @@ class MotionController:
             print('PID', self.x, self.ix, self.dx)
             print(list(np.multiply(Kx, np.array([self.x, self.ix, self.dx]))))
         # dr_drone is in degrees, should not be affected by DIST_TO_PIX
-        ret = np.array([dx_drone, -dy_drone, dz_drone, dr_drone/self.DIST_TO_PIX]) * self.DIST_TO_PIX
+        ret = np.array([dx_drone, -dy_drone, dz_drone, -dr_drone/self.DIST_TO_PIX]) * self.DIST_TO_PIX
         ret = np.clip(ret, -MAX_SPEED, MAX_SPEED)
         return ret.astype(int)
 
