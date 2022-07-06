@@ -56,7 +56,7 @@ class FrontEnd(object):
 
     def run(self):
         global INTVERVAL, interval_counter
-        img_counter = max([int(e.split('.')[0]) for e in os.listdir('racecar') if 'jpg' in e]+[0])+1
+        img_counter = max([int(e.split('.')[0]) for e in os.listdir('extra_posecard') if 'jpg' in e]+[0])+1
         print(img_counter)
 
         self.tello.connect()
@@ -70,7 +70,7 @@ class FrontEnd(object):
 
         should_stop = False
         while not should_stop:
-            if frame_read.stopped:
+            if frame_read.stopped:[]
                 break
             for event in pygame.event.get():
                 if event.type == pygame.USEREVENT + 1:
@@ -93,7 +93,7 @@ class FrontEnd(object):
             interval_counter += 1
             if INTVERVAL == interval_counter:
                 if self.recording:
-                    print(f'img{img_counter} status:{cv2.imwrite(f"racecar/{str(img_counter)}.jpg", frame)}')
+                    print(f'img{img_counter} status:{cv2.imwrite(f"extra_posecard/{str(img_counter)}.jpg", frame)}')
                 img_counter += 1
                 interval_counter = 0
 
