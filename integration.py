@@ -4,7 +4,6 @@ import pygame
 import numpy as np
 import time
 from object_tracking_class import ObjectTracker
-from hsv_class import HsvSetter
 from motion_control import MotionController
 from data_logger import Logger
 
@@ -40,8 +39,8 @@ class FrontEnd(object):
         self.vz = 0
         self.vx = 0
         self.vy = 0
-        self.vyaw = 0
-        self.v = 0.0, 0.0, 0.0  # yaw, up/down, forward/backward
+        self.vr = 0
+        self.v = 0.0, 0.0, 0.0, 0.0  # yaw, up/down, forward/backward
         self.speed = 10  # do not change this
 
         self.send_rc_control = False
@@ -75,7 +74,6 @@ class FrontEnd(object):
         # In case streaming is on. This happens when we quit this program without the escape key.
         self.tello.streamoff()
         self.tello.streamon()
-        # self.tello.send_keepalive()
         frame_read = self.tello.get_frame_read()
 
         should_stop = False
@@ -99,15 +97,15 @@ class FrontEnd(object):
             self.screen.fill([0, 0, 0])
 
             frame = frame_read.frame
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Commented out to color correct
             frame, rect = self.ot.get_rect(frame)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             self.motion_controller.add_location(rect)
             self.v = self.motion_controller.instruct(diagnostic=False)
 
             if self.tello.is_flying:
                 self.v = list(map(int, self.v))
-                self.vx, self.vy, self.vz = self.v
+                self.vx, self.vy, self.vz, self.vr = self.v
 
             # logging data
             if LOG:
@@ -132,7 +130,7 @@ class FrontEnd(object):
         if not self.send_rc_control:
             return
         self.tello.send_rc_control(self.vx, self.vz,
-                                   self.vy, self.vyaw)
+                                   self.vy, self.vr)
 
 
 def main():

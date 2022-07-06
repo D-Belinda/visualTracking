@@ -11,7 +11,7 @@ class VideoTracking:
 
     def __init__(self, videoStream):
         self.videoStream = videoStream
-        self.hsv_value = np.load('../hsv_value.npy')
+        self.hsv_value = np.load('hsv_value.npy')
 
     # Displaying the frame
     def display_frame(self):

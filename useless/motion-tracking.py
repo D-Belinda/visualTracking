@@ -85,7 +85,7 @@ class FrontEnd(object):
 
             # FIXME: remove if doesn't work
             # import hsv values
-            self.hsv_value = np.load('../hsv_value.npy')
+            self.hsv_value = np.load('hsv_value.npy')
 
             # resize the frame, blur it, and convert it to the HSV
             # color space

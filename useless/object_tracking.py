@@ -36,7 +36,7 @@ else:
 	vs = cv2.VideoCapture(args["video"])
 
 # import hsv values
-hsv_value = np.load('../hsv_value.npy')
+hsv_value = np.load('hsv_value.npy')
 print(hsv_value)
 
 # allow the camera or video file to warm up
