@@ -10,9 +10,28 @@ FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
 Kx = np.array([0.2, 0.03, 0.1]) * 1  # P, I, D constants, 1/0 is on/off switch
+Ky = np.array([1.0, 0.05, 0.13]) * 0
+Kz = np.array([0.7, 0.02, 0.12]) * 1
+Kr = np.array([0.6, 0.07, 0.02]) * 1  # scale up rotation, keep tangent speed
+
+''' Observations
+Kx: stable, but a bit slow
+Ky: good because it isn't affected by turning, speed is much faster
+Kz: upped the speed for following
+Kr: decreased rotational speed, relationship to tangential movement?
+
+P: increase for faster corrections until on the edge of oscillations, then lower back down until smooth
+I: increase after P is finished, more stable/sensitive?
+D: keep low at first, increase to dampen effects of P and I after they have been tuned
+'''
+
+
+''' Original Values:
+Kx = np.array([0.2, 0.03, 0.1]) * 1
 Ky = np.array([1.0, 0.05, 0.13]) * 1
 Kz = np.array([0.4, 0.02, 0.12]) * 1
 Kr = np.array([0.7, 0.07, 0.02]) * 1
+'''
 
 MAX_SPEED = 70  # max speed of the drone that will be assigned
 
@@ -84,7 +103,8 @@ class MotionController:
 
         # calculate angle of rotation
         tilt_dir = rect[3]
-        angle = tilt_dir * math.degrees(np.arccos((wh[0]/wh[1]) / 1.5))
+        angle = tilt_dir * math.degrees(np.arccos((wh[0]/wh[1]) / 1.5)) # 0 = width, 1 = height
+        #   Try to find a better math equation, verify 1.5 width-to-height ratio
         angle = 0 if math.isnan(angle) else angle
         rect[3] = angle
         print(wh, tilt_dir, angle)
@@ -117,7 +137,8 @@ class MotionController:
         dz_drone = float(np.sum(np.multiply(Kz, np.array([self.z, self.iz, self.dz]))))
         dr_drone = float(np.sum(np.multiply(Kr, np.array([self.r, self.ir, self.dr]))))
 
-        d_tangent = .65 * math.radians(dr_drone)*self.cur_distance
+        # The .65 can be adjusted, might have to lower
+        d_tangent = .65 * math.radians(dr_drone)*self.cur_distance / 1    # upped rotation but want to keep tangent speed the same
         print(d_tangent, dx_drone)
         dx_drone += d_tangent
 
