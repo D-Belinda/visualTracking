@@ -31,6 +31,12 @@ Kx = np.array([0.2, 0.03, 0.1]) * 1
 Ky = np.array([1.0, 0.05, 0.13]) * 1
 Kz = np.array([0.4, 0.02, 0.12]) * 1
 Kr = np.array([0.7, 0.07, 0.02]) * 1
+
+7/7 Tuning 
+Kx = np.array([0.2, 0.03, 0.1]) * 1
+Ky = np.array([1.0, 0.05, 0.13]) * 0
+Kz = np.array([0.7, 0.02, 0.12]) * 1
+Kr = np.array([0.6, 0.07, 0.02]) * 1
 '''
 
 MAX_SPEED = 70  # max speed of the drone that will be assigned
