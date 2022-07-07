@@ -41,6 +41,7 @@ class FrontEnd(object):
         self.vy = 0
         self.vr = 0
         self.v = 0.0, 0.0, 0.0, 0.0  # yaw, up/down, forward/backward
+        self.rect = 0.0, 0.0, 0.0, 0.0
         self.speed = 10  # do not change this
 
         self.send_rc_control = False
@@ -59,6 +60,7 @@ class FrontEnd(object):
         frame = cv2.putText(frame, battery_text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         frame = cv2.putText(frame, "velocities: " + str(self.v), (5, 45), cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (255, 255, 255), 2)
+        frame = cv2.putText(frame, 'rect: ' + str(self.rect), (5, 75), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         frame = np.rot90(frame)
         frame = np.flipud(frame)
 
@@ -97,10 +99,10 @@ class FrontEnd(object):
             self.screen.fill([0, 0, 0])
 
             frame = frame_read.frame
-            frame, rect = self.ot.get_rect(frame)
+            frame, self.rect = self.ot.get_rect(frame)
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            self.motion_controller.add_location(rect)
+            self.rect = self.motion_controller.add_location(self.rect)
             self.v = self.motion_controller.instruct(diagnostic=False)
 
             if self.tello.is_flying:
@@ -129,8 +131,7 @@ class FrontEnd(object):
     def update(self):
         if not self.send_rc_control:
             return
-        self.tello.send_rc_control(self.vx, self.vz,
-                                   self.vy, self.vr)
+        self.tello.send_rc_control(self.vx, self.vz, self.vy, self.vr)
 
 
 def main():

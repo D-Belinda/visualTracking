@@ -6,25 +6,32 @@ velocity of the drone in these three dimensions
 import numpy as np
 import math
 
-
-def cot(x):
-    return 1/math.tan(x)
-
-
 FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
-Kx = np.array([0.7, 0.05, 0.23]) * 1  # P, I, D constants, 1/0 is on/off switch
-Ky = np.array([2.0, 0.05, 0.25]) * 0
-Kz = np.array([1.0, 0.05, 0.2]) * 0
-Kr = np.array([0.5, 0.05, 0.05]) * 1.2
+Kx = np.array([0.2, 0.03, 0.1]) * 1  # P, I, D constants, 1/0 is on/off switch
+Ky = np.array([1.0, 0.05, 0.13]) * 1
+Kz = np.array([0.4, 0.02, 0.12]) * 1
+Kr = np.array([0.7, 0.07, 0.02]) * 1
 
 MAX_SPEED = 70  # max speed of the drone that will be assigned
 
 FADE_COEFFICIENT = 1 / 3  # the previous frame is weighted 1/3 of the current
 
-TRACK_DIST = 30  # in cm
-ITEM_SIZE = 7
+TRACK_DIST = 100  # in cm
+ITEM_SIZE = 25
+DIST_TO_PIX_AT_90 = 12.5/120
+HORIZONTAL_FOV = 62.27
+VERTICAL_FOV = 75
+
+
+def calc_distance(item_size, n_pixels):
+    return item_size / np.arctan(math.radians(n_pixels / 720 * VERTICAL_FOV))
+
+
+def calc_error(distance, n_pixels):
+    angle = n_pixels / 960 * HORIZONTAL_FOV
+    return np.tan(math.radians(angle)) * distance
 
 
 class MotionController:
@@ -34,13 +41,13 @@ class MotionController:
         self.ix = self.iy = self.iz = self.ir = 0.0
 
     def __init__(self, fps):
-        self.max_WoverH = 1
         self.x = self.y = self.z = self.r = 0.0
         self.dx = self.dy = self.dz = self.dr = 0.0
         self.ix = self.iy = self.iz = self.ir = 0.0
         self.FPS = fps
-        self.DIST_TO_PIX = 1 / 12  # the ratio between distance (cm) and the number of pixels
-        self.I_MAX = 25 / self.DIST_TO_PIX / Kx[1]  # maximum value for the integral component to prevent blow-ups
+        # self.DIST_TO_PIX = 1 / 12  # the ratio between distance (cm) and the number of pixels
+        self.I_MAX = 25  # maximum value for the integral component to prevent blow-ups
+        self.cur_distance = TRACK_DIST
 
     def __update_params(self, x, y, z, r, dx, dy, dz, dr, ix, iy, iz, ir):
         self.x = x
@@ -65,22 +72,24 @@ class MotionController:
         if rect is None or len(rect) == 0:
             return
 
+        rect[0] -= FRAME_WIDTH/2
+        rect[1] -= FRAME_HEIGHT/2
+
         # rect_np is the numpy array of the object's location in the current frame
         wh = rect[2]
-        # angle is the field of view in radian * proportion of the object on screen
-        # the use of cotangent is explained more in the email I sent to Dr Fu in the beginning of the summer
-        rect[2] = wh[1] / np.sqrt(3)
-        rect[2] *= cot(math.radians(82.6) * rect[2] / 960) - cot(math.radians(7))
+        self.cur_distance = calc_distance(ITEM_SIZE, wh[1])
+        rect[0] = calc_error(self.cur_distance, rect[0])
+        rect[1] = calc_error(self.cur_distance, rect[1])
+        rect[2] = self.cur_distance - TRACK_DIST
+
         # calculate angle of rotation
         tilt_dir = rect[3]
-        angle = tilt_dir * math.degrees(np.arccos((wh[0]/wh[1]) / 1.43))
+        angle = tilt_dir * math.degrees(np.arccos((wh[0]/wh[1]) / 1.5))
         angle = 0 if math.isnan(angle) else angle
         rect[3] = angle
         print(wh, tilt_dir, angle)
 
         rect_np = np.array(rect)
-        rect_np[0] = rect_np[0] - FRAME_WIDTH / 2
-        rect_np[1] = rect_np[1] - FRAME_HEIGHT / 2
 
         # the xyzr's are first set to the location of the object in the previous frame
         xyzr = np.array([self.x, self.y, self.z, self.r])
@@ -98,18 +107,25 @@ class MotionController:
 
         self.__update_params_tuple(xyzr, ixyzr, dxyzr)
 
+        return [int(e) for e in rect]
+
     # returns the desired speed in the form of a tuple (x, y, z)
     def instruct(self, diagnostic=False):
         dx_drone = float(np.sum(np.multiply(Kx, np.array([self.x, self.ix, self.dx]))))
+
         dy_drone = float(np.sum(np.multiply(Ky, np.array([self.y, self.iy, self.dy]))))
         dz_drone = float(np.sum(np.multiply(Kz, np.array([self.z, self.iz, self.dz]))))
         dr_drone = float(np.sum(np.multiply(Kr, np.array([self.r, self.ir, self.dr]))))
+
+        d_tangent = .65 * math.radians(dr_drone)*self.cur_distance
+        print(d_tangent, dx_drone)
+        dx_drone += d_tangent
 
         if diagnostic:
             print('PID', self.x, self.ix, self.dx)
             print(list(np.multiply(Kx, np.array([self.x, self.ix, self.dx]))))
         # dr_drone is in degrees, should not be affected by DIST_TO_PIX
-        ret = np.array([dx_drone, -dy_drone, dz_drone, -dr_drone/self.DIST_TO_PIX]) * self.DIST_TO_PIX
+        ret = np.array([dx_drone, -dy_drone, dz_drone, -dr_drone])
         ret = np.clip(ret, -MAX_SPEED, MAX_SPEED)
         return ret.astype(int)
 
