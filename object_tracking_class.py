@@ -8,6 +8,8 @@ from modules.keypoints import extract_keypoints, group_keypoints
 from modules.load_state import load_state
 from modules.pose import Pose, track_poses
 
+MODEL_DIR = 'checkpoints/checkpoint_iter_1600-2.pth'
+
 
 def normalize(img, img_mean, img_scale):
     img = np.array(img, dtype=np.float32)
@@ -56,9 +58,6 @@ def infer_fast(net, img, net_input_height_size, stride, upsample_ratio, cpu,
     pafs = cv2.resize(pafs, (0, 0), fx=upsample_ratio, fy=upsample_ratio, interpolation=cv2.INTER_CUBIC)
 
     return heatmaps, pafs, scale, pad
-
-
-MODEL_DIR = 'checkpoints/checkpoint_iter_3600.pth'
 
 
 class ObjectTracker:
