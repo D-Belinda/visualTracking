@@ -101,6 +101,7 @@ class FrontEnd(object):
             frame = frame_read.frame
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame, self.rect = self.ot.get_rect(frame)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             self.rect = self.motion_controller.add_location(self.rect)
             self.v = self.motion_controller.instruct(diagnostic=False)
