@@ -10,7 +10,9 @@ from object_tracking_class import ObjectTracker
 """
 To use this file:
 Do not need to takeoff the drone. Keep the card in the drone's field of view, then press 'R' to make it take a picture 
-every 5 frames. To stop recording, press 'r' again
+every 5 frames. To stop recording, press 'R' again.
+
+To log picture data, press 'L'. Currently, it will save into 'test.csv', will change upon actual testing
 """
 
 # Speed of the drone
