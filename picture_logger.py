@@ -119,7 +119,7 @@ class FrontEnd(object):
                 interval_counter = 0
 
             gen_text = f"Generating: {self.recording}  {self.tello.get_battery()}"
-            frame = cv2.putText(frame, gen_text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            frame = cv2.putText(frame, gen_text, (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
             frame = self.process_frame(frame)
             self.screen.blit(frame, (0, 0))
