@@ -3,8 +3,8 @@ import cv2
 import pygame
 import numpy as np
 import time
+import os
 from object_tracking_class import ObjectTracker
-from motion_control import MotionController
 
 """
 To use this file:
@@ -55,9 +55,26 @@ class FrontEnd(object):
         # create update timer
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000 // FPS)
 
+        # Init object tracker
+        self.ot = ObjectTracker()
+
+    def process_frame(self, frame):
+        # Displaying battery
+        battery_text = "Battery: {}%".format(self.tello.get_battery())
+        frame = cv2.putText(frame, battery_text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        frame = cv2.putText(frame, "velocities: " + str(self.v), (5, 45), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                            (255, 255, 255), 2)
+        frame = cv2.putText(frame, 'rect: ' + str(self.rect), (5, 75), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        frame = np.rot90(frame)
+        frame = np.flipud(frame)
+
+        frame = cv2.resize(frame, (int(frame.shape[1] * 0.9), int(frame.shape[0] * 0.9)))
+        frame = pygame.surfarray.make_surface(frame)
+        return frame
+
     def run(self):
         global INTVERVAL, interval_counter
-        img_counter = max([int(e.split('.')[0]) for e in os.listdir('extra_posecard') if 'jpg' in e]+[0])+1
+        img_counter = max([int(e.split('.')[0]) for e in os.listdir('left_right_dataset') if 'jpg' in e]+[0])+1
         print(img_counter)
 
         self.tello.connect()
@@ -66,13 +83,13 @@ class FrontEnd(object):
         # In case streaming is on. This happens when we quit this program without the escape key.
         self.tello.streamoff()
         self.tello.streamon()
-        # self.tello.send_keepalive()
         frame_read = self.tello.get_frame_read()
 
         should_stop = False
         while not should_stop:
-            if frame_read.stopped:[]
+            if frame_read.stopped:
                 break
+
             for event in pygame.event.get():
                 if event.type == pygame.USEREVENT + 1:
                     self.update()
@@ -90,22 +107,21 @@ class FrontEnd(object):
             self.screen.fill([0, 0, 0])
 
             frame = frame_read.frame
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame, self.rect = self.ot.get_rect(frame)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             interval_counter += 1
             if INTVERVAL == interval_counter:
                 if self.recording:
-                    print(f'img{img_counter} status:{cv2.imwrite(f"extra_posecard/{str(img_counter)}.jpg", frame)}')
+                    print(f'img{img_counter} status:{cv2.imwrite(f"left_right_dataset/{str(img_counter)}.jpg", frame)}')
                 img_counter += 1
                 interval_counter = 0
 
             gen_text = f"Generating: {self.recording}  {self.tello.get_battery()}"
             frame = cv2.putText(frame, gen_text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame = np.rot90(frame)
-            frame = np.flipud(frame)
-            frame = cv2.resize(frame, (int(frame.shape[1] * 0.9), int(frame.shape[0] * 0.9)))
 
-            frame = pygame.surfarray.make_surface(frame)
+            frame = self.process_frame(frame)
             self.screen.blit(frame, (0, 0))
             pygame.display.update()
 
