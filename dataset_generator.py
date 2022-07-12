@@ -16,7 +16,7 @@ S = 10
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 FPS = 40
-INTVERVAL = 15  # take a pic every 5 frames
+INTERVAL = 15  # take a pic every 5 frames
 interval_counter = 0
 
 
@@ -55,7 +55,7 @@ class FrontEnd(object):
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000 // FPS)
 
     def run(self):
-        global INTVERVAL, interval_counter
+        global INTERVAL, interval_counter
         img_counter = max([int(e.split('.')[0]) for e in os.listdir('img') if 'jpg' in e])
         print(img_counter)
 

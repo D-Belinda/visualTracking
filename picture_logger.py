@@ -47,6 +47,7 @@ class FrontEnd(object):
         self.up_down_velocity = 0
         self.yaw_velocity = 0
         self.v = 0.0, 0.0, 0.0  # yaw, up/down, forward/backward
+        self.rect = 0.0, 0.0, 0.0, 0.0
         self.speed = 10  # do not change this
 
         self.send_rc_control = False
@@ -115,6 +116,7 @@ class FrontEnd(object):
             if INTVERVAL == interval_counter:
                 if self.recording:
                     print(f'img{img_counter} status:{cv2.imwrite(f"left_right_dataset/{str(img_counter)}.jpg", frame)}')
+                    print(self.rect)
                 img_counter += 1
                 interval_counter = 0
 
