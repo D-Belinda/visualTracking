@@ -4,7 +4,6 @@ import pygame
 import numpy as np
 import time
 from object_tracking_class import ObjectTracker
-from hsv_class import HsvSetter
 from motion_control import MotionController
 from data_logger import Logger
 
