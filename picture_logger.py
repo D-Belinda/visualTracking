@@ -109,7 +109,7 @@ class FrontEnd(object):
             frame = frame_read.frame
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame, self.rect = self.ot.get_rect(frame)
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             interval_counter += 1
             if INTVERVAL == interval_counter:
