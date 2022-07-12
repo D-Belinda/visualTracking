@@ -4,6 +4,7 @@ import pygame
 import numpy as np
 import time
 import os
+import pandas as pd
 from object_tracking_class import ObjectTracker
 
 """
@@ -19,6 +20,13 @@ S = 10
 FPS = 40
 INTVERVAL = 15  # take a pic every 5 frames
 interval_counter = 0
+
+img_number = []
+bbox_x = []
+bbox_y = []
+bbox_w = []
+bbox_h = []
+tilt_dr = []
 
 
 class FrontEnd(object):
@@ -104,6 +112,19 @@ class FrontEnd(object):
                         should_stop = True
                     elif event.key == pygame.K_r:
                         self.recording = not self.recording
+                    elif event.key == pygame.K_l:
+                        data = {
+                            'image-number': img_number,
+                            'x-coord': bbox_x,
+                            'y-coord': bbox_y,
+                            'bbox-width': bbox_w,
+                            'bbox-height': bbox_h,
+                            'tilt-direction': tilt_dr
+                        }
+
+                        df = pd.DataFrame(data)
+                        df.to_csv('test.csv')
+                        print('Logged data')
 
             self.screen.fill([0, 0, 0])
 
@@ -117,6 +138,14 @@ class FrontEnd(object):
                 if self.recording:
                     print(f'img{img_counter} status:{cv2.imwrite(f"left_right_dataset/{str(img_counter)}.jpg", frame)}')
                     print(self.rect)
+
+                    img_number.append(img_counter)
+                    bbox_x.append(self.rect[0])
+                    bbox_y.append(self.rect[1])
+                    bbox_w.append(self.rect[2][0])
+                    bbox_h.append(self.rect[2][1])
+                    tilt_dr.append(self.rect[3])
+
                 img_counter += 1
                 interval_counter = 0
 
@@ -128,6 +157,7 @@ class FrontEnd(object):
             pygame.display.update()
 
             time.sleep(1 / FPS)
+
 
         # Call it always before finishing. To deallocate resources.
         self.tello.land()
