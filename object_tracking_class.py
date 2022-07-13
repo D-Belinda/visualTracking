@@ -3,7 +3,7 @@ import time
 import cv2
 import torch
 import math
-from models.with_mobilenet import PoseEstimationWithMobileNet
+from op_models.with_mobilenet import PoseEstimationWithMobileNet
 from modules.keypoints import extract_keypoints, group_keypoints
 from modules.load_state import load_state
 from modules.pose import Pose, track_poses
@@ -12,10 +12,10 @@ from utils.general import (LOGGER, check_file, check_img_size, check_imshow, che
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, time_sync
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
-from yolo_models.common import DetectMultiBackend
+from models.common import DetectMultiBackend
 
 MODEL_DIR = 'checkpoints/checkpoint_iter_1600-2.pth'
-YOLO_DIR = 'Nsz624bs128ep120.pt'
+YOLO_DIR = 'checkpoints/Nsz624bs128ep120.pt'
 
 
 def normalize(img, img_mean, img_scale):
@@ -105,7 +105,7 @@ class ObjectTracker:
         img /= 255
         if len(img.shape) == 3:
             img = img[None]
-
+        print(img.shape)
         pred = self.yolo(img)
         pred = non_max_suppression(pred, conf_thres=0.3, iou_thres=0.45, classes=None, max_det=1)
         det = pred[0]
