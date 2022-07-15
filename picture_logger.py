@@ -90,7 +90,7 @@ class FrontEnd(object):
 
     def run(self):
         global INTVERVAL, interval_counter
-        img_counter = max([int(e.split('.')[0]) for e in os.listdir('left-dataset') if 'jpg' in e]+[0])+1
+        img_counter = max([int(e.split('.')[0]) for e in os.listdir('right-dataset') if 'jpg' in e]+[0])+1
         print(img_counter)
 
         self.tello.connect()
@@ -131,7 +131,7 @@ class FrontEnd(object):
                         }
 
                         df = pd.DataFrame(data)
-                        df.to_csv('left.csv')
+                        df.to_csv('right.csv')
                         print('Logged data')
 
             self.screen.fill([0, 0, 0])
@@ -144,7 +144,7 @@ class FrontEnd(object):
             interval_counter += 1
             if INTVERVAL == interval_counter:
                 if self.recording:
-                    print(f'img{img_counter} status:{cv2.imwrite(f"left-dataset/{str(img_counter)}.jpg", frame)}')
+                    print(f'img{img_counter} status:{cv2.imwrite(f"right-dataset/{str(img_counter)}.jpg", frame)}')
                     print(self.rect)
 
                     img_number.append(img_counter)
