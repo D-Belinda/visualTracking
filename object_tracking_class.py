@@ -75,8 +75,8 @@ class ObjectTracker:
 
         self.device = select_device('')
         yolo = DetectMultiBackend(YOLO_DIR, device=self.device, dnn=False, data=None, fp16=False)
-        self.stride, self.names, pt = yolo.stride, yolo.names, yolo.pt
-        self.imgsz = check_img_size((960, 720), s=self.stride)
+        self.yolo_stride, self.names, pt = yolo.stride, yolo.names, yolo.pt
+        self.imgsz = check_img_size((960, 720), s=self.yolo_stride)
 
         yolo.warmup(imgsz=(1, 3, *self.imgsz))
         self.yolo = yolo
@@ -96,8 +96,8 @@ class ObjectTracker:
         self.rect = ()
 
     def get_sub_frame(self, frame):
-        ENLARGEMENT = 1.5
-        img = letterbox(frame, self.imgsz, stride=self.stride)[0]
+        ENLARGEMENT = 1.1
+        img = letterbox(frame, self.imgsz, stride=self.yolo_stride)[0]
         img = img.transpose((2, 0, 1))[::-1]
         img = np.ascontiguousarray(img)
         img = torch.from_numpy(img).to(self.device)
@@ -105,7 +105,6 @@ class ObjectTracker:
         img /= 255
         if len(img.shape) == 3:
             img = img[None]
-        print(img.shape)
         pred = self.yolo(img)
         pred = non_max_suppression(pred, conf_thres=0.3, iou_thres=0.45, classes=None, max_det=1)
         det = pred[0]
@@ -114,7 +113,7 @@ class ObjectTracker:
         annotator = Annotator(im0, line_width=3, example=str(self.names))
 
         crop_top_left = 0, 0
-        size = frame.shape[0], frame.shape[1]
+        hw = frame.shape[0], frame.shape[1]
 
         if len(det):
             # Rescale boxes from img_size to im0 size
@@ -125,18 +124,22 @@ class ObjectTracker:
             label = f'{self.names[c]} {conf:.2f}'
             annotator.box_label(xyxy, label, color=colors(c, True))
             xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4))).view(-1).tolist()
+            crop_top_left = max(0, int(xywh[1] - xywh[3] / 2 * ENLARGEMENT)), \
+                            max(0, int(xywh[0] - xywh[2] / 2 * ENLARGEMENT))
+            hw = int(xywh[3] * ENLARGEMENT + 1), int(xywh[2] * ENLARGEMENT + 1)
 
-            crop_top_left = (xywh[1] - xywh[3] / 2 * ENLARGEMENT, xywh[0] - xywh[2] / 2 * ENLARGEMENT)
-            img = img[crop_top_left[0] : crop_top_left[0] + xywh[3] * ENLARGEMENT,
-                      crop_top_left[1] : crop_top_left[1] + xywh[2] * ENLARGEMENT]
-            size = xywh[2]*ENLARGEMENT, xywh[3]*ENLARGEMENT
+        crop = frame[crop_top_left[0]: crop_top_left[0] + hw[0],
+                     crop_top_left[1]: crop_top_left[1] + hw[1]]
+        frame = annotator.result()
+        cv2.imshow('yolo', frame)
+        cv2.waitKey(1)
 
-        return img, crop_top_left, size
+        return crop, crop_top_left, hw
 
     def get_rect(self, frame):
         t1 = time.time()
 
-        img, crop_top_left, size = self.get_sub_frame(frame)
+        img, crop_top_left, hw = self.get_sub_frame(frame)
 
         heatmaps, pafs, scale, pad = infer_fast(self.model, img, self.input_height_size, self.stride,
                                                 self.upsample_ratio, True)
@@ -164,12 +167,14 @@ class ObjectTracker:
             pose = Pose(pose_keypoints, pose_entries[n][5])
             current_poses.append(pose)
 
-        for p in current_poses:
-            p.bbox[0] += crop_top_left[0]
-            p.bbox[1] += crop_top_left[1]
-            for kpt in p.keypoints:
-                kpt[0] += crop_top_left[1]
-                kpt[1] += crop_top_left[0]
+        for i in range(len(current_poses)):
+            current_poses[i].bbox = list(current_poses[i].bbox)
+            current_poses[i].bbox[0] += crop_top_left[0]
+            current_poses[i].bbox[1] += crop_top_left[1]
+            for j in range(len(current_poses[i].keypoints)):
+                current_poses[i].keypoints[j] = list(current_poses[i].keypoints[j])
+                current_poses[i].keypoints[j][0] += crop_top_left[1]
+                current_poses[i].keypoints[j][1] += crop_top_left[0]
 
         track_poses(self.previous_poses, current_poses, smooth=True)
 
@@ -183,13 +188,13 @@ class ObjectTracker:
         cv2.rectangle(frame, (pose.bbox[0], pose.bbox[1]),
                       (pose.bbox[0] + pose.bbox[2], pose.bbox[1] + pose.bbox[3]), (0, 255, 0))
         cv2.putText(frame, 'id: {}'.format(pose.id), (pose.bbox[0], pose.bbox[1] - 16),
-                            cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 0, 255))
+                    cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 0, 255))
 
         def dist(x, y):
-            return math.sqrt((x[0]-y[0])**2 + (x[1]-y[1])**2)
+            return math.sqrt((x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2)
 
-        bbox_x = pose.bbox[0] + pose.bbox[2]/2
-        bbox_y = pose.bbox[1] + pose.bbox[3]/2
+        bbox_x = pose.bbox[0] + pose.bbox[2] / 2
+        bbox_y = pose.bbox[1] + pose.bbox[3] / 2
         bbox_wh = (pose.bbox[2], pose.bbox[3])
         # from atop, direction is positive if the posecard is turning counter-clockwise
         tilt_dir = 1 if dist(pose.keypoints[0], pose.keypoints[1]) > dist(pose.keypoints[3], pose.keypoints[4]) else -1

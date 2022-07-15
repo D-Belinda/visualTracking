@@ -9,10 +9,10 @@ import math
 FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
-Kx = np.array([0.2, 0.03, 0.1]) * 1  # P, I, D constants, 1/0 is on/off switch
-Ky = np.array([1.0, 0.05, 0.13]) * 0
-Kz = np.array([0.7, 0.02, 0.12]) * 1
-Kr = np.array([0.6, 0.07, 0.02]) * 1  # scale up rotation, keep tangent speed
+Kx = np.array([0.07, 0.05, 0.09]) * 0
+Ky = np.array([1.0, 0.3, 0.08]) * 1
+Kz = np.array([0.5, 0.12, 0.02]) * 1
+Kr = np.array([0.7, 0.07, 0.02]) * 0
 
 ''' Observations
 Kx: stable, but a bit slow
@@ -27,15 +27,15 @@ D: keep low at first, increase to dampen effects of P and I after they have been
 
 
 ''' Original Values:
-Kx = np.array([0.2, 0.03, 0.1]) * 1
-Ky = np.array([1.0, 0.05, 0.13]) * 1
-Kz = np.array([0.4, 0.02, 0.12]) * 1
-Kr = np.array([0.7, 0.07, 0.02]) * 1
+Kx = np.array([0.2, 0.03, 0.1]) * 1  # P, I, D constants, 1/0 is on/off switch
+Ky = np.array([1.0, 0.05, 0.13]) * 0
+Kz = np.array([0.7, 0.02, 0.12]) * 1
+Kr = np.array([0.6, 0.07, 0.02]) * 1  # scale up rotation, keep tangent speed
 '''
 
 MAX_SPEED = 70  # max speed of the drone that will be assigned
 
-FADE_COEFFICIENT = 1 / 3  # the previous frame is weighted 1/3 of the current
+FADE_COEFFICIENT = 2 / 3  # the previous frame is weighted 1/3 of the current
 
 TRACK_DIST = 100  # in cm
 ITEM_SIZE = 25
@@ -103,11 +103,10 @@ class MotionController:
 
         # calculate angle of rotation
         tilt_dir = rect[3]
-        angle = tilt_dir * math.degrees(np.arccos((wh[0]/wh[1]) / 1.5)) # 0 = width, 1 = height
+        angle = tilt_dir * math.degrees(np.arccos((wh[0]/wh[1]) / 1.5))  # 0 = width, 1 = height
         #   Try to find a better math equation, verify 1.5 width-to-height ratio
         angle = 0 if math.isnan(angle) else angle
         rect[3] = angle
-        print(wh, tilt_dir, angle)
 
         rect_np = np.array(rect)
 
@@ -139,7 +138,6 @@ class MotionController:
 
         # The .65 can be adjusted, might have to lower
         d_tangent = .65 * math.radians(dr_drone)*self.cur_distance / 1    # upped rotation but want to keep tangent speed the same
-        print(d_tangent, dx_drone)
         dx_drone += d_tangent
 
         if diagnostic:
@@ -149,6 +147,9 @@ class MotionController:
         ret = np.array([dx_drone, -dy_drone, dz_drone, -dr_drone])
         ret = np.clip(ret, -MAX_SPEED, MAX_SPEED)
         return ret.astype(int)
+
+    def update_fps(self, fps):
+        self.FPS = fps
 
     def get_obj_displacement(self):
         return np.array([self.x, self.y, self.z])
