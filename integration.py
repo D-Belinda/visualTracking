@@ -80,6 +80,8 @@ class FrontEnd(object):
 
         should_stop = False
         while not should_stop:
+            t1 = time.time()
+
             if frame_read.stopped:
                 break
 
@@ -99,7 +101,7 @@ class FrontEnd(object):
             self.screen.fill([0, 0, 0])
 
             frame = frame_read.frame
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame, self.rect = self.ot.get_rect(frame)
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -124,6 +126,11 @@ class FrontEnd(object):
             pygame.display.update()
 
             time.sleep(1 / FPS)
+
+            t2 = time.time()
+            fps = 1 / (t2 - t1)
+            print('fps:' + str(fps))
+            self.motion_controller.update_fps(fps)
 
         self.tello.land()
         self.send_rc_control = False

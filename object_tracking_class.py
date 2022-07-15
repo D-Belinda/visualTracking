@@ -3,12 +3,19 @@ import time
 import cv2
 import torch
 import math
-from models.with_mobilenet import PoseEstimationWithMobileNet
+from op_models.with_mobilenet import PoseEstimationWithMobileNet
 from modules.keypoints import extract_keypoints, group_keypoints
 from modules.load_state import load_state
 from modules.pose import Pose, track_poses
+from utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
+                           increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
+from utils.plots import Annotator, colors, save_one_box
+from utils.torch_utils import select_device, time_sync
+from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
+from models.common import DetectMultiBackend
 
 MODEL_DIR = 'checkpoints/checkpoint_iter_1600-2.pth'
+YOLO_DIR = 'checkpoints/Nsz624bs128ep120.pt'
 
 
 def normalize(img, img_mean, img_scale):
@@ -65,6 +72,15 @@ class ObjectTracker:
 
     def __init__(self):
         # construct the argument parse and parse the arguments
+
+        self.device = select_device('')
+        yolo = DetectMultiBackend(YOLO_DIR, device=self.device, dnn=False, data=None, fp16=False)
+        self.yolo_stride, self.names, pt = yolo.stride, yolo.names, yolo.pt
+        self.imgsz = check_img_size((960, 720), s=self.yolo_stride)
+
+        yolo.warmup(imgsz=(1, 3, *self.imgsz))
+        self.yolo = yolo
+
         self.model = PoseEstimationWithMobileNet(num_heatmaps=6, num_pafs=16)
         checkpoint = torch.load(MODEL_DIR, map_location='cpu')
         load_state(self.model, checkpoint)
@@ -79,10 +95,53 @@ class ObjectTracker:
         print("model loaded...")
         self.rect = ()
 
+    def get_sub_frame(self, frame):
+        ENLARGEMENT = 1.1
+        img = letterbox(frame, self.imgsz, stride=self.yolo_stride)[0]
+        img = img.transpose((2, 0, 1))[::-1]
+        img = np.ascontiguousarray(img)
+        img = torch.from_numpy(img).to(self.device)
+        img = img.half() if self.yolo.fp16 else img.float()
+        img /= 255
+        if len(img.shape) == 3:
+            img = img[None]
+        pred = self.yolo(img)
+        pred = non_max_suppression(pred, conf_thres=0.3, iou_thres=0.45, classes=None, max_det=1)
+        det = pred[0]
+        im0 = frame.copy()
+        gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+        annotator = Annotator(im0, line_width=3, example=str(self.names))
+
+        crop_top_left = 0, 0
+        hw = frame.shape[0], frame.shape[1]
+
+        if len(det):
+            # Rescale boxes from img_size to im0 size
+            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+
+            *xyxy, conf, cls = det[0]
+            c = int(cls)  # integer class
+            label = f'{self.names[c]} {conf:.2f}'
+            annotator.box_label(xyxy, label, color=colors(c, True))
+            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4))).view(-1).tolist()
+            crop_top_left = max(0, int(xywh[1] - xywh[3] / 2 * ENLARGEMENT)), \
+                            max(0, int(xywh[0] - xywh[2] / 2 * ENLARGEMENT))
+            hw = int(xywh[3] * ENLARGEMENT + 1), int(xywh[2] * ENLARGEMENT + 1)
+
+        crop = frame[crop_top_left[0]: crop_top_left[0] + hw[0],
+                     crop_top_left[1]: crop_top_left[1] + hw[1]]
+        frame = annotator.result()
+        cv2.imshow('yolo', frame)
+        cv2.waitKey(1)
+
+        return crop, crop_top_left, hw
+
     def get_rect(self, frame):
         t1 = time.time()
 
-        heatmaps, pafs, scale, pad = infer_fast(self.model, frame, self.input_height_size, self.stride,
+        img, crop_top_left, hw = self.get_sub_frame(frame)
+
+        heatmaps, pafs, scale, pad = infer_fast(self.model, img, self.input_height_size, self.stride,
                                                 self.upsample_ratio, True)
 
         total_keypoints_num = 0
@@ -108,22 +167,31 @@ class ObjectTracker:
             pose = Pose(pose_keypoints, pose_entries[n][5])
             current_poses.append(pose)
 
+        for i in range(len(current_poses)):
+            current_poses[i].bbox = list(current_poses[i].bbox)
+            current_poses[i].bbox[0] += crop_top_left[0]
+            current_poses[i].bbox[1] += crop_top_left[1]
+            for j in range(len(current_poses[i].keypoints)):
+                current_poses[i].keypoints[j] = list(current_poses[i].keypoints[j])
+                current_poses[i].keypoints[j][0] += crop_top_left[1]
+                current_poses[i].keypoints[j][1] += crop_top_left[0]
+
         track_poses(self.previous_poses, current_poses, smooth=True)
 
         if len(current_poses) != 0:
             self.previous_poses = current_poses
-
         if len(self.previous_poses) == 0:
             return frame, None
+
         pose = max(self.previous_poses, key=lambda x: x.confidence)
         pose.draw(frame)
         cv2.rectangle(frame, (pose.bbox[0], pose.bbox[1]),
                       (pose.bbox[0] + pose.bbox[2], pose.bbox[1] + pose.bbox[3]), (0, 255, 0))
         cv2.putText(frame, 'id: {}'.format(pose.id), (pose.bbox[0], pose.bbox[1] - 16),
-                            cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 0, 255))
+                    cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 0, 255))
 
         def dist(x, y):
-            return math.sqrt((x[0]-y[0])**2 + (x[1]-y[1])**2)
+            return math.sqrt((x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2)
 
         # pose.bbox - 0: top left, 1: bottom left, 2: center, 3: top right, 4: bottom right
         bbox_x = pose.bbox[0] + pose.bbox[2]/2
@@ -136,4 +204,3 @@ class ObjectTracker:
         # print(f'{MODEL_DIR}: {1 / (t2 - t1)}fps')
 
         return frame, [bbox_x, bbox_y, bbox_wh, tilt_dir]
-
