@@ -15,6 +15,11 @@ every 5 frames. To stop recording, press 'R' again.
 To log picture data, press 'L'. Currently, it will save into 'test.csv', will change upon actual testing
 """
 
+'''
+Distance: 150 cm, Height: 90 cm from ground, level with drone camera
+left-right dataset: +/- 70 cm, intervals of 5 cm, 5 pics per
+'''
+
 # Speed of the drone
 S = 10
 # Frames per second of the pygame window display
@@ -114,6 +119,7 @@ class FrontEnd(object):
                         should_stop = True
                     elif event.key == pygame.K_r:
                         self.recording = not self.recording
+                        print('Recording Off/On')
                     elif event.key == pygame.K_l:
                         data = {
                             'image-number': img_number,
@@ -125,7 +131,7 @@ class FrontEnd(object):
                         }
 
                         df = pd.DataFrame(data)
-                        df.to_csv('test.csv')
+                        df.to_csv('left-right.csv')
                         print('Logged data')
 
             self.screen.fill([0, 0, 0])
