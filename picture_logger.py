@@ -4,11 +4,15 @@ import pygame
 import numpy as np
 import time
 import os
+import pandas as pd
+from object_tracking_class import ObjectTracker
 
 """
 To use this file:
 Do not need to takeoff the drone. Keep the card in the drone's field of view, then press 'R' to make it take a picture 
-every 5 frames. To stop recording, press 'r' again
+every 5 frames. To stop recording, press 'R' again.
+
+To log picture data, press 'L'. Currently, it will save into 'test.csv', will change upon actual testing
 """
 
 # Speed of the drone
@@ -16,8 +20,15 @@ S = 10
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 FPS = 40
-INTERVAL = 15  # take a pic every 5 frames
+INTVERVAL = 15  # take a pic every 5 frames
 interval_counter = 0
+
+img_number = []
+bbox_x = []
+bbox_y = []
+bbox_w = []
+bbox_h = []
+tilt_dr = []
 
 
 class FrontEnd(object):
@@ -46,6 +57,7 @@ class FrontEnd(object):
         self.up_down_velocity = 0
         self.yaw_velocity = 0
         self.v = 0.0, 0.0, 0.0  # yaw, up/down, forward/backward
+        self.rect = 0.0, 0.0, 0.0, 0.0
         self.speed = 10  # do not change this
 
         self.send_rc_control = False
@@ -54,9 +66,26 @@ class FrontEnd(object):
         # create update timer
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000 // FPS)
 
+        # Init object tracker
+        self.ot = ObjectTracker()
+
+    def process_frame(self, frame):
+        # Displaying battery
+        battery_text = "Battery: {}%".format(self.tello.get_battery())
+        frame = cv2.putText(frame, battery_text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        frame = cv2.putText(frame, "velocities: " + str(self.v), (5, 45), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                            (255, 255, 255), 2)
+        frame = cv2.putText(frame, 'rect: ' + str(self.rect), (5, 75), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        frame = np.rot90(frame)
+        frame = np.flipud(frame)
+
+        frame = cv2.resize(frame, (int(frame.shape[1] * 0.9), int(frame.shape[0] * 0.9)))
+        frame = pygame.surfarray.make_surface(frame)
+        return frame
+
     def run(self):
-        global INTERVAL, interval_counter
-        img_counter = max([int(e.split('.')[0]) for e in os.listdir('img') if 'jpg' in e])
+        global INTVERVAL, interval_counter
+        img_counter = max([int(e.split('.')[0]) for e in os.listdir('left_right_dataset') if 'jpg' in e]+[0])+1
         print(img_counter)
 
         self.tello.connect()
@@ -65,13 +94,13 @@ class FrontEnd(object):
         # In case streaming is on. This happens when we quit this program without the escape key.
         self.tello.streamoff()
         self.tello.streamon()
-        # self.tello.send_keepalive()
         frame_read = self.tello.get_frame_read()
 
         should_stop = False
         while not should_stop:
             if frame_read.stopped:
                 break
+
             for event in pygame.event.get():
                 if event.type == pygame.USEREVENT + 1:
                     self.update()
@@ -85,30 +114,52 @@ class FrontEnd(object):
                         should_stop = True
                     elif event.key == pygame.K_r:
                         self.recording = not self.recording
+                    elif event.key == pygame.K_l:
+                        data = {
+                            'image-number': img_number,
+                            'x-coord': bbox_x,
+                            'y-coord': bbox_y,
+                            'bbox-width': bbox_w,
+                            'bbox-height': bbox_h,
+                            'tilt-direction': tilt_dr
+                        }
+
+                        df = pd.DataFrame(data)
+                        df.to_csv('test.csv')
+                        print('Logged data')
 
             self.screen.fill([0, 0, 0])
 
             frame = frame_read.frame
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame, self.rect = self.ot.get_rect(frame)
+            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             interval_counter += 1
             if INTVERVAL == interval_counter:
                 if self.recording:
-                    print(f'img{img_counter} status:{cv2.imwrite(f"img/{str(img_counter)}.jpg", frame)}')
+                    print(f'img{img_counter} status:{cv2.imwrite(f"left_right_dataset/{str(img_counter)}.jpg", frame)}')
+                    print(self.rect)
+
+                    img_number.append(img_counter)
+                    bbox_x.append(self.rect[0])
+                    bbox_y.append(self.rect[1])
+                    bbox_w.append(self.rect[2][0])
+                    bbox_h.append(self.rect[2][1])
+                    tilt_dr.append(self.rect[3])
+
                 img_counter += 1
                 interval_counter = 0
 
             gen_text = f"Generating: {self.recording}  {self.tello.get_battery()}"
-            frame = cv2.putText(frame, gen_text, (5, 720 - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame = np.rot90(frame)
-            frame = np.flipud(frame)
-            frame = cv2.resize(frame, (int(frame.shape[1] * 0.9), int(frame.shape[0] * 0.9)))
+            frame = cv2.putText(frame, gen_text, (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-            frame = pygame.surfarray.make_surface(frame)
+            frame = self.process_frame(frame)
             self.screen.blit(frame, (0, 0))
             pygame.display.update()
 
             time.sleep(1 / FPS)
+
 
         # Call it always before finishing. To deallocate resources.
         self.tello.land()

@@ -193,13 +193,14 @@ class ObjectTracker:
         def dist(x, y):
             return math.sqrt((x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2)
 
-        bbox_x = pose.bbox[0] + pose.bbox[2] / 2
-        bbox_y = pose.bbox[1] + pose.bbox[3] / 2
+        # pose.bbox - 0: top left, 1: bottom left, 2: center, 3: top right, 4: bottom right
+        bbox_x = pose.bbox[0] + pose.bbox[2]/2
+        bbox_y = pose.bbox[1] + pose.bbox[3]/2
         bbox_wh = (pose.bbox[2], pose.bbox[3])
         # from atop, direction is positive if the posecard is turning counter-clockwise
         tilt_dir = 1 if dist(pose.keypoints[0], pose.keypoints[1]) > dist(pose.keypoints[3], pose.keypoints[4]) else -1
 
         t2 = time.time()
-        print(f'{MODEL_DIR}: {1 / (t2 - t1)}fps')
+        # print(f'{MODEL_DIR}: {1 / (t2 - t1)}fps')
 
         return frame, [bbox_x, bbox_y, bbox_wh, tilt_dir]

@@ -2,6 +2,20 @@
 PURPOSE: given the object's relative location in the x(horizontal), y(vertical), and z(distance), return the desired
 velocity of the drone in these three dimensions
 """
+'''
+TODO: make response faster, keep the center of the object in the center of the frame
+size should remain constant --> distance
+rotation: drone should always face the object directly
+
+map pose estimation with rotation, systematic
+prove/show parameters scientifically 
+
+ALTERNATE CONTROL (not PID)
+build a lookup table (distance, size, rotation, location)
+1-to-1 mapping, use the table to control the drone
+label each picture w/ the data, left/right x cm
+
+'''
 
 import numpy as np
 import math
@@ -9,10 +23,11 @@ import math
 FRAME_WIDTH = 960
 FRAME_HEIGHT = 720
 
-Kx = np.array([0.07, 0.05, 0.09]) * 0
-Ky = np.array([1.0, 0.3, 0.08]) * 1
-Kz = np.array([0.5, 0.12, 0.02]) * 1
-Kr = np.array([0.7, 0.07, 0.02]) * 0
+Kx = np.array([0.25, 0.03, 0.1]) * 1 #* .8 # P, I, D constants, 1/0 is on/off switch
+Ky = np.array([0.9, 0.05, 0.15]) * 1 #* .8
+Kz = np.array([0.7, 0.02, 0.12]) * 1 #* .8
+# Kz = np.array([0.8, 0.25, 0.5]) * 1
+Kr = np.array([0.6, 0.07, 0.02]) * 1 #* .8# scale up rotation, keep tangent speed
 
 ''' Observations
 Kx: stable, but a bit slow
@@ -27,10 +42,16 @@ D: keep low at first, increase to dampen effects of P and I after they have been
 
 
 ''' Original Values:
-Kx = np.array([0.2, 0.03, 0.1]) * 1  # P, I, D constants, 1/0 is on/off switch
-Ky = np.array([1.0, 0.05, 0.13]) * 0
+Kx = np.array([0.2, 0.03, 0.1]) * 1
+Ky = np.array([1.0, 0.05, 0.13]) * 1
+Kz = np.array([0.4, 0.02, 0.12]) * 1
+Kr = np.array([0.7, 0.07, 0.02]) * 1
+
+7/7 Tuning 
+Kx = np.array([0.2, 0.03, 0.1]) * 1
+Ky = np.array([1.0, 0.05, 0.13]) * 04
 Kz = np.array([0.7, 0.02, 0.12]) * 1
-Kr = np.array([0.6, 0.07, 0.02]) * 1  # scale up rotation, keep tangent speed
+Kr = np.array([0.6, 0.07, 0.02]) * 1
 '''
 
 MAX_SPEED = 70  # max speed of the drone that will be assigned
