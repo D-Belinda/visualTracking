@@ -6,6 +6,7 @@ import time
 import os
 import pandas as pd
 from object_tracking_class import ObjectTracker
+from motion_control import MotionController
 
 """
 To use this file:
@@ -25,15 +26,21 @@ S = 10
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 FPS = 40
-INTVERVAL = 15  # take a pic every 5 frames
-interval_counter = 0
+#INTVERVAL = 5  # take a pic every 5 frames
+#interval_counter = 0
 
 img_number = []
-bbox_x = []
-bbox_y = []
-bbox_w = []
-bbox_h = []
-tilt_dr = []
+bbox_x_pix = []
+bbox_y_pix = []
+bbox_w_pix = []
+bbox_h_pix = []
+tilt_dr_pix = []
+
+bbox_x_dist = []
+bbox_y_dist = []
+bbox_w_dist = []
+bbox_h_dist = []
+tilt_dr_dist = []
 
 
 class FrontEnd(object):
@@ -73,6 +80,7 @@ class FrontEnd(object):
 
         # Init object tracker
         self.ot = ObjectTracker()
+        self.motion_controller = MotionController(FPS)
 
     def process_frame(self, frame):
         # Displaying battery
@@ -89,8 +97,8 @@ class FrontEnd(object):
         return frame
 
     def run(self):
-        global INTVERVAL, interval_counter
-        img_counter = max([int(e.split('.')[0]) for e in os.listdir('right-dataset') if 'jpg' in e]+[0])+1
+        #global INTVERVAL, interval_counter
+        img_counter = max([int(e.split('.')[0]) for e in os.listdir('lstm') if 'jpg' in e]+[0])+1
         print(img_counter)
 
         self.tello.connect()
@@ -123,15 +131,20 @@ class FrontEnd(object):
                     elif event.key == pygame.K_l:
                         data = {
                             'image-number': img_number,
-                            'x-coord': bbox_x,
-                            'y-coord': bbox_y,
-                            'bbox-width': bbox_w,
-                            'bbox-height': bbox_h,
-                            'tilt-direction': tilt_dr
+                            'x-coord pix': bbox_x_pix,
+                            'y-coord pix': bbox_y_pix,
+                            'bbox-width pix': bbox_w_pix,
+                            'bbox-height pix': bbox_h_pix,
+                            'tilt-direction pix': tilt_dr_pix,
+                            'x-coord dist': bbox_x_dist,
+                            'y-coord dist': bbox_y_dist,
+                            'bbox-width dist': bbox_w_dist,
+                            'bbox-height dist': bbox_h_dist,
+                            'tilt-direction dist': tilt_dr_dist,
                         }
 
                         df = pd.DataFrame(data)
-                        df.to_csv('right.csv')
+                        df.to_csv('lstm.csv')
                         print('Logged data')
 
             self.screen.fill([0, 0, 0])
@@ -141,21 +154,28 @@ class FrontEnd(object):
             frame, self.rect = self.ot.get_rect(frame)
             # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            interval_counter += 1
-            if INTVERVAL == interval_counter:
-                if self.recording:
-                    print(f'img{img_counter} status:{cv2.imwrite(f"right-dataset/{str(img_counter)}.jpg", frame)}')
-                    print(self.rect)
+            #interval_counter += 1
+            #if INTVERVAL == interval_counter:
+            if self.recording:
+                print(f'img{img_counter} status:{cv2.imwrite(f"lstm/{str(img_counter)}.jpg", frame)}')
+                print(self.rect)
 
-                    img_number.append(img_counter)
-                    bbox_x.append(self.rect[0])
-                    bbox_y.append(self.rect[1])
-                    bbox_w.append(self.rect[2][0])
-                    bbox_h.append(self.rect[2][1])
-                    tilt_dr.append(self.rect[3])
+                img_number.append(img_counter)
+                bbox_x_pix.append(self.rect[0])
+                bbox_y_pix.append(self.rect[1])
+                bbox_w_pix.append(self.rect[2][0])
+                bbox_h_pix.append(self.rect[2][1])
+                tilt_dr_pix.append(self.rect[3])
 
-                img_counter += 1
-                interval_counter = 0
+                self.rect = self.motion_controller.add_location(self.rect)
+                bbox_x_dist.append(self.rect[0])
+                bbox_y_dist.append(self.rect[1])
+                bbox_w_dist.append(self.rect[2][0])
+                bbox_h_dist.append(self.rect[2][1])
+                tilt_dr_dist.append(self.rect[3])
+
+                #img_counter += 1
+                # interval_counter = 0
 
             gen_text = f"Generating: {self.recording}  {self.tello.get_battery()}"
             frame = cv2.putText(frame, gen_text, (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
@@ -165,7 +185,6 @@ class FrontEnd(object):
             pygame.display.update()
 
             time.sleep(1 / FPS)
-
 
         # Call it always before finishing. To deallocate resources.
         self.tello.land()
