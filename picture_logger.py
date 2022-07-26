@@ -41,6 +41,8 @@ bbox_y_dist = []
 bbox_z_dist = []
 tilt_dr_dist = []
 
+timestamp = []
+
 
 class FrontEnd(object):
     """ Maintains the Tello display and moves it through the keyboard keys.
@@ -139,6 +141,7 @@ class FrontEnd(object):
                             'y-coord dist': bbox_y_dist,
                             'z-coord dist': bbox_z_dist,
                             'tilt-direction dist': tilt_dr_dist,
+                            'timestamp': timestamp
                         }
 
                         df = pd.DataFrame(data)
@@ -170,6 +173,8 @@ class FrontEnd(object):
                 bbox_y_dist.append(self.rect[1])
                 bbox_z_dist.append(self.rect[2])
                 tilt_dr_dist.append(self.rect[3])
+
+                timestamp.append(time.time())
 
                 img_counter += 1
                 #interval_counter = 0
