@@ -26,8 +26,8 @@ S = 10
 # Frames per second of the pygame window display
 # A low number also results in input lag, as input information is processed once per frame.
 FPS = 40
-#INTVERVAL = 5  # take a pic every 5 frames
-#interval_counter = 0
+INTVERVAL = 5  # take a pic every 5 frames
+interval_counter = 0
 
 img_number = []
 bbox_x_pix = []
@@ -38,9 +38,10 @@ tilt_dr_pix = []
 
 bbox_x_dist = []
 bbox_y_dist = []
-bbox_w_dist = []
-bbox_h_dist = []
+bbox_z_dist = []
 tilt_dr_dist = []
+
+timestamp = []
 
 
 class FrontEnd(object):
@@ -97,7 +98,7 @@ class FrontEnd(object):
         return frame
 
     def run(self):
-        #global INTVERVAL, interval_counter
+        global INTVERVAL, interval_counter
         img_counter = max([int(e.split('.')[0]) for e in os.listdir('lstm') if 'jpg' in e]+[0])+1
         print(img_counter)
 
@@ -138,9 +139,9 @@ class FrontEnd(object):
                             'tilt-direction pix': tilt_dr_pix,
                             'x-coord dist': bbox_x_dist,
                             'y-coord dist': bbox_y_dist,
-                            'bbox-width dist': bbox_w_dist,
-                            'bbox-height dist': bbox_h_dist,
+                            'z-coord dist': bbox_z_dist,
                             'tilt-direction dist': tilt_dr_dist,
+                            'timestamp': timestamp
                         }
 
                         df = pd.DataFrame(data)
@@ -154,7 +155,7 @@ class FrontEnd(object):
             frame, self.rect = self.ot.get_rect(frame)
             # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            #interval_counter += 1
+            interval_counter += 1
             #if INTVERVAL == interval_counter:
             if self.recording:
                 print(f'img{img_counter} status:{cv2.imwrite(f"lstm/{str(img_counter)}.jpg", frame)}')
@@ -170,12 +171,13 @@ class FrontEnd(object):
                 self.rect = self.motion_controller.add_location(self.rect)
                 bbox_x_dist.append(self.rect[0])
                 bbox_y_dist.append(self.rect[1])
-                bbox_w_dist.append(self.rect[2][0])
-                bbox_h_dist.append(self.rect[2][1])
+                bbox_z_dist.append(self.rect[2])
                 tilt_dr_dist.append(self.rect[3])
 
-                #img_counter += 1
-                # interval_counter = 0
+                timestamp.append(time.time())
+
+                img_counter += 1
+                #interval_counter = 0
 
             gen_text = f"Generating: {self.recording}  {self.tello.get_battery()}"
             frame = cv2.putText(frame, gen_text, (5, 720 - 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
