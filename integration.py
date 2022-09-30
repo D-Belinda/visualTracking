@@ -1,7 +1,9 @@
 from djitellopy import Tello
 import cv2
 import pygame
+import pandas as pd
 import numpy as np
+import os
 import time
 from object_tracking_class import ObjectTracker
 from motion_control import MotionController
@@ -42,6 +44,7 @@ class FrontEnd(object):
         self.vyaw = 0
         self.v = 0.0, 0.0, 0.0  # yaw, up/down, forward/backward
         self.speed = 10  # do not change this
+        self.recording = False
 
         self.send_rc_control = False
 
@@ -78,6 +81,10 @@ class FrontEnd(object):
         frame_read = self.tello.get_frame_read()
 
         should_stop = False
+
+        record = []
+        counter = max([int(e.split('.')[0]) for e in os.listdir('jinran/img') if e[0] != '.']+[1])
+        start = counter
         while not should_stop:
             if frame_read.stopped:
                 break
@@ -94,15 +101,34 @@ class FrontEnd(object):
                         self.send_rc_control = True
                     elif event.key == pygame.K_SPACE:
                         should_stop = True
+                    elif event.key == pygame.K_r:
+                        self.recording = not self.recording
+                        print(self.recording)
+                        if self.recording:
+                            start = counter
+                        if not self.recording:
+                            csv_name = f'jinran/{start}-{counter}.csv'
+                            pd.DataFrame(record).to_csv(csv_name)
 
             self.screen.fill([0, 0, 0])
 
-            frame = frame_read.frame
+            orig_frame = frame_read.frame
+            frame, rect = self.ot.get_rect(orig_frame)
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Commented out to color correct
-            frame, rect = self.ot.get_rect(frame)
 
             self.motion_controller.add_location(rect)
             self.v = self.motion_controller.instruct(diagnostic=False)
+
+            if self.recording:
+                img_name = f'jinran/img/{counter}.jpg'
+                print(f'{img_name},{cv2.imwrite(img_name, orig_frame)}')
+                counter += 1
+                record.append((img_name, time.time(), rect, self.v))
+                if len(record) > 500:
+                    csv_name = f'jinran/{start}-{counter}.csv'
+                    pd.DataFrame(record).to_csv(csv_name)
+                    record = []
+                    start = counter
 
             if self.tello.is_flying:
                 self.v = list(map(int, self.v))

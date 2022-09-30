@@ -39,7 +39,7 @@ class ObjectTracker:
             img = img[None]
 
         pred = self.model(img)
-        pred = non_max_suppression(pred, conf_thres=0.3, iou_thres=0.45, classes=None, max_det=1)
+        pred = non_max_suppression(pred, conf_thres=0.2, iou_thres=0.45, classes=None, max_det=1)
         det = pred[0]
         im0 = frame.copy()
         gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh

@@ -63,7 +63,7 @@ class MotionController:
         rect_np = np.array(rect)
         rect_np[0] = rect_np[0] - FRAME_WIDTH / 2
         rect_np[1] = rect_np[1] - FRAME_HEIGHT / 2
-        rect_np[2] = rect_np[2] * (cot(radians(82.6) * rect_np[2] / 960) - cot(radians(5)))
+        rect_np[2] = rect_np[2] * (cot(radians(82.6) * rect_np[2] / 960) - cot(radians(10)))
         # angle is the field of view in radian * proportion of the object on screen
         # the use of cotangent is explained more in the email I sent to Dr Fu in the beginning of the summer
 

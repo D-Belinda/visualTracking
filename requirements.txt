@@ -1,0 +1,11 @@
+numpy
+djitellopy
+opencv-python
+pygame
+pandas
+torch
+torchvision
+matplotlib
+yaml2
+seaborn
+tqdm
